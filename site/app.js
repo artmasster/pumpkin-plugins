@@ -94,7 +94,7 @@ const TEXT = {
   en: {
     nav_plugins: 'Plugins', nav_install: 'Install',
     eyebrow: 'For Pumpkin 0.2.2 · Minecraft 26.3 · release 0.7.0',
-    h1: 'plugins<br>a <em>Pumpkin</em> server<br>cannot do without',
+    h1a: 'plugins', h1b: 'a <em>Pumpkin</em> server cannot do without',
     lede: 'Paper .jar plugins do not run on Pumpkin. These are written from scratch in Rust to do the job of the ones you know, with the same commands.',
     finder_label: 'What did you use on Paper?', finder_idle: 'Type a name to see what stands in for it',
     shelf_title: 'One at a time', none: 'Nothing matches that',
@@ -180,7 +180,7 @@ function paintCards() {
     const card = cards.get(p.id);
     const rep = card.querySelector('.rep');
     rep.textContent = `${t('instead')} `;
-    rep.append(el('s', '', p.rep));
+    rep.append(el('b', '', p.rep));
     card.querySelector('p').textContent = p[lang];
     card.querySelector('.more').textContent = t('more');
     card.classList.toggle('gone', cat !== 'all' && p.cat !== cat);
@@ -301,13 +301,15 @@ function runConsole() {
   setTimeout(step, 700);
 }
 
-/* ---------- the ticker: old name -> new name ---------- */
+/* ---------- the ticker: each plugin's art and name, twice so the loop has no seam ---------- */
 function buildTicker() {
   const run = $('ticker');
   for (let pass = 0; pass < 2; pass += 1) {
     PLUGINS.forEach((p) => {
-      const item = el('span');
-      item.append(el('s', '', p.rep.split(' / ')[0]), el('i', '', '→'), el('b', '', p.name));
+      const item = el('span', 'tick');
+      const img = el('img');
+      img.src = `img/${p.id}.webp`; img.alt = ''; img.width = 32; img.height = 32; img.loading = 'lazy';
+      item.append(img, el('b', '', p.name));
       run.append(item);
     });
   }

@@ -37,15 +37,15 @@
     <div class="hero-copy">
       <p class="eyebrow reveal"><span class="dot"></span><span data-i18n="eyebrow">สำหรับ Pumpkin 0.2.2 · Minecraft 26.3 · รุ่น 0.7.0</span></p>
       <h1 class="reveal">
-        <span class="count" id="count">18</span>
-        <span class="h1-text" data-i18n="h1">ปลั๊กอิน<br>ที่เซิร์ฟ <em>Pumpkin</em><br>ขาดไม่ได้</span>
+        <span class="h1-top"><span class="count" id="count">18</span><span data-i18n="h1a">ปลั๊กอิน</span></span>
+        <span class="h1-rest" data-i18n="h1b">ที่เซิร์ฟ <em>Pumpkin</em> ขาดไม่ได้</span>
       </h1>
       <p class="lede reveal" data-i18n="lede">ปลั๊กอิน .jar ของ Paper ใช้กับ Pumpkin ไม่ได้ ชุดนี้เขียนใหม่ทั้งหมดด้วย Rust ให้ทำงานแทนตัวที่คุณคุ้นเคย ด้วยคำสั่งชุดเดิม</p>
 
       <form class="finder reveal" id="finder" autocomplete="off">
         <label for="q" data-i18n="finder_label">เคยใช้ตัวไหนบน Paper?</label>
+        <input id="q" type="search" spellcheck="false" placeholder="LuckPerms, WorldEdit, EssentialsX…">
         <div class="finder-row">
-          <input id="q" type="search" spellcheck="false" placeholder="LuckPerms, WorldEdit, EssentialsX…">
           <span class="finder-arrow" aria-hidden="true">→</span>
           <output id="answer" for="q" data-i18n="finder_idle">พิมพ์ชื่อ แล้วจะบอกตัวที่ใช้แทน</output>
         </div>
@@ -102,7 +102,7 @@
 </footer>
 
 <dialog id="sheet" aria-labelledby="sheet-name">
-  <button class="sheet-close" id="sheet-close" type="button" aria-label="Close">×</button>
+  <button class="sheet-close" id="sheet-close" type="button" aria-label="Close"></button>
   <div class="sheet-art"><img id="sheet-img" alt="" width="176" height="176"><span class="sheet-glow" aria-hidden="true"></span></div>
   <div class="sheet-body">
     <p class="sheet-rep"><span data-i18n="rep">ใช้แทน</span> <b id="sheet-rep"></b></p>

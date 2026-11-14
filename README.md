@@ -4,6 +4,8 @@ Eighteen plugins for [Pumpkin](https://github.com/Pumpkin-MC/Pumpkin), the Minec
 
 They are made by [MCSV](https://mcsv.me), a game server host, and run on its Pumpkin servers. Everything here also works on a Pumpkin server you run yourself.
 
+Browse them at **[pk-plugin.mcsv.me](https://pk-plugin.mcsv.me/)**.
+
 **Status:** pre-1.0, like Pumpkin itself. Built and tested against Pumpkin `0.2.2+26.3-26.60` (Minecraft 26.3). Every release passes unit tests, a headless test bot and a console test on the real server binary. Testing with real game clients has been limited so far, so expect rough edges and please report them.
 
 ## Plugins
@@ -81,6 +83,7 @@ The Pumpkin release is pinned in the workspace `Cargo.toml`. For a newer Pumpkin
 | `tools/mcbot/` | A headless Minecraft 26.3 client for tests: joins, runs a script of commands and movements, prints what the server sent |
 | `scripts/console-smoke.py` | Types commands into a Pumpkin console that is a real terminal, the way a hosting panel runs it |
 | `scripts/publish.sh` | The release gate MCSV runs for its own hosting: tests, release build, load on the real server binary, console test |
+| `site/` | The page at pk-plugin.mcsv.me: plain HTML, CSS and JavaScript, no build step. The plugin art in `site/img/` is MCSV's and is not covered by the MIT license; the font is Playpen Sans Thai under the OFL (`site/fonts/OFL.txt`) |
 
 ## License
 

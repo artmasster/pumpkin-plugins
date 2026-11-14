@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pumpkin Plugins: ปลั๊กอิน 18 ตัวสำหรับเซิร์ฟ Pumpkin | MCSV</title>
+<meta name="description" content="ปลั๊กอิน 18 ตัวสำหรับเซิร์ฟ Minecraft Pumpkin ใช้แทน LuckPerms, EssentialsX, WorldEdit, CoreProtect และตัวอื่นที่คุ้นเคย เปิดซอร์ส ทำโดย MCSV">
+<meta name="theme-color" content="#0a0b1e">
+<meta property="og:title" content="Pumpkin Plugins by MCSV">
+<meta property="og:description" content="18 open-source plugins for the Pumpkin Minecraft server: permissions, essentials, world editing, block logging, web map and more.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://pk-plugin.mcsv.me/">
+<meta property="og:image" content="https://pk-plugin.mcsv.me/img/basics.webp">
+<link rel="canonical" href="https://pk-plugin.mcsv.me/">
+<link rel="icon" type="image/webp" href="img/basics.webp">
+<link rel="preload" href="fonts/playpen-sans-thai-700-thai.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="sky" aria-hidden="true"></canvas>
+
+<header class="top">
+  <a class="brand" href="#top" aria-label="Pumpkin Plugins">
+    <span class="brand-cube" aria-hidden="true"></span>
+    <span>pk<b>-plugin</b></span>
+  </a>
+  <nav class="top-links">
+    <a href="#plugins" data-i18n="nav_plugins">ปลั๊กอิน</a>
+    <a href="#install" data-i18n="nav_install">วิธีลง</a>
+    <a href="https://github.com/artmasster/pumpkin-plugins" rel="noopener" target="_blank">GitHub</a>
+    <button class="lang" id="lang" type="button" aria-label="Switch language">EN</button>
+  </nav>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow reveal"><span class="dot"></span><span data-i18n="eyebrow">สำหรับ Pumpkin 0.2.2 · Minecraft 26.3 · รุ่น 0.7.0</span></p>
+      <h1 class="reveal">
+        <span class="count" id="count">18</span>
+        <span class="h1-text" data-i18n="h1">ปลั๊กอิน<br>ที่เซิร์ฟ <em>Pumpkin</em><br>ขาดไม่ได้</span>
+      </h1>
+      <p class="lede reveal" data-i18n="lede">ปลั๊กอิน .jar ของ Paper ใช้กับ Pumpkin ไม่ได้ ชุดนี้เขียนใหม่ทั้งหมดด้วย Rust ให้ทำงานแทนตัวที่คุณคุ้นเคย ด้วยคำสั่งชุดเดิม</p>
+
+      <form class="finder reveal" id="finder" autocomplete="off">
+        <label for="q" data-i18n="finder_label">เคยใช้ตัวไหนบน Paper?</label>
+        <div class="finder-row">
+          <input id="q" type="search" spellcheck="false" placeholder="LuckPerms, WorldEdit, EssentialsX…">
+          <span class="finder-arrow" aria-hidden="true">→</span>
+          <output id="answer" for="q" data-i18n="finder_idle">พิมพ์ชื่อ แล้วจะบอกตัวที่ใช้แทน</output>
+        </div>
+      </form>
+    </div>
+
+    <div class="console reveal" aria-hidden="true">
+      <div class="console-bar"><i></i><i></i><i></i><span>pumpkin · console</span></div>
+      <pre id="log"></pre>
+    </div>
+  </section>
+
+  <div class="ticker" aria-hidden="true"><div class="ticker-run" id="ticker"></div></div>
+
+  <section class="shelf" id="plugins">
+    <div class="shelf-head">
+      <h2 data-i18n="shelf_title">เลือกดูทีละตัว</h2>
+      <div class="chips" id="chips" role="tablist"></div>
+    </div>
+    <div class="grid" id="grid"></div>
+    <p class="none" id="none" hidden data-i18n="none">ไม่มีตัวที่ตรงกับคำนี้</p>
+  </section>
+
+  <section class="install" id="install">
+    <h2 data-i18n="install_title">ลงได้สองทาง</h2>
+    <div class="ways">
+      <article class="way way-mcsv">
+        <span class="way-tag" data-i18n="way1_tag">เซิร์ฟที่เช่ากับ MCSV</span>
+        <h3 data-i18n="way1_title">กดปุ่มเดียว</h3>
+        <ol>
+          <li data-i18n="way1_a">เปิดหน้าเซิร์ฟ Pumpkin แล้วเข้าเมนู ปลั๊กอิน</li>
+          <li data-i18n="way1_b">กด ติดตั้ง ที่ตัวที่ต้องการ หรือบอก AI ในหน้าเซิร์ฟให้ลงให้</li>
+          <li data-i18n="way1_c">รีสตาร์ตเซิร์ฟ 1 ครั้ง ระบบอัปเดตรุ่นใหม่ให้เองทุกครั้งที่เปิดเซิร์ฟ</li>
+        </ol>
+        <a class="btn" href="https://mcsv.me" rel="noopener" target="_blank" data-i18n="way1_btn">เช่าเซิร์ฟ Pumpkin ที่ MCSV</a>
+      </article>
+      <article class="way">
+        <span class="way-tag" data-i18n="way2_tag">เซิร์ฟ Pumpkin ของคุณเอง</span>
+        <h3 data-i18n="way2_title">build จากซอร์ส</h3>
+        <ol>
+          <li data-i18n="way2_a">build ไฟล์ .wasm จากซอร์สบน GitHub (ยังไม่มีไฟล์สำเร็จรูปให้โหลด)</li>
+          <li data-i18n="way2_b">วางไฟล์ในโฟลเดอร์ plugins/ แล้วให้สิทธิ์ใน pumpkin.toml</li>
+          <li data-i18n="way2_c">รีสตาร์ต แล้ว console จะขึ้น Loaded &lt;ชื่อ&gt;</li>
+        </ol>
+        <a class="btn btn-ghost" href="https://github.com/artmasster/pumpkin-plugins#install" rel="noopener" target="_blank" data-i18n="way2_btn">อ่านวิธีบน GitHub</a>
+      </article>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <p><span data-i18n="foot_a">ทำโดย</span> <a href="https://mcsv.me" rel="noopener" target="_blank">MCSV</a> · <span data-i18n="foot_b">เปิดซอร์สแบบ MIT</span> · <a href="https://github.com/Pumpkin-MC/Pumpkin" rel="noopener" target="_blank">Pumpkin</a></p>
+  <p class="foot-small" data-i18n="foot_c">ชื่ออย่าง LuckPerms หรือ WorldEdit เป็นของโครงการนั้น ๆ เราเอ่ยถึงเพื่อบอกว่าแต่ละตัวทำงานแทนอะไร ไม่ได้เกี่ยวข้องกัน</p>
+</footer>
+
+<dialog id="sheet" aria-labelledby="sheet-name">
+  <button class="sheet-close" id="sheet-close" type="button" aria-label="Close">×</button>
+  <div class="sheet-art"><img id="sheet-img" alt="" width="176" height="176"><span class="sheet-glow" aria-hidden="true"></span></div>
+  <div class="sheet-body">
+    <p class="sheet-rep"><span data-i18n="rep">ใช้แทน</span> <b id="sheet-rep"></b></p>
+    <h2 id="sheet-name"></h2>
+    <p class="sheet-text" id="sheet-text"></p>
+    <h3 data-i18n="cmds">คำสั่งหลัก</h3>
+    <div class="cmds" id="sheet-cmds"></div>
+    <h3 id="sheet-toml-title" data-i18n="toml">สิทธิ์ใน pumpkin.toml</h3>
+    <button class="toml" id="sheet-toml" type="button"><code id="sheet-toml-code"></code><span class="copy-hint" data-i18n="copy">กดเพื่อคัดลอก</span></button>
+    <p class="sheet-meta" id="sheet-meta"></p>
+  </div>
+</dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="app.js" defer></script>
+</body>
+</html>

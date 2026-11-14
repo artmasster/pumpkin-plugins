@@ -1,0 +1,20 @@
+MCSV self-hosted webfonts — license notice
+==========================================
+
+ไฟล์ .woff2 ในโฟลเดอร์นี้คือ subset (thai + latin) ของฟอนต์จาก Google Fonts
+ทั้งหมดเผยแพร่ภายใต้ SIL Open Font License, Version 1.1
+
+- Playpen Sans Thai — Copyright 2023 The Playpen Sans Thai Project Authors
+  https://github.com/googlefonts/playpen-sans-thai
+- Sarabun — Copyright 2016 The Sarabun Project Authors
+  https://github.com/cadsondemak/Sarabun
+
+สำเนา license เต็ม: https://openfontlicense.org/open-font-license-official-text/
+
+หมายเหตุการดูแล
+---------------
+- ไฟล์เสิร์ฟด้วย `expires 30d; Cache-Control: public, immutable` และ CF token ของเรา
+  ไม่มี scope Cache Purge ⇒ **ห้ามทับไฟล์ชื่อเดิม** เปลี่ยนเนื้อฟอนต์เมื่อไรให้ bump
+  ส่วนต่อท้าย `.v1` เป็น `.v2` แล้วแก้ให้ครบ 2 ที่: `src/index.css` (@font-face)
+  และ `index.html` (link rel=preload)
+- ชุดนี้ไม่อยู่ในขอบเขต `imgv()` / `IMG_V` (นั่นเป็นกฎของรูปภาพ)

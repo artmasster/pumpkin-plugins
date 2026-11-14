@@ -1,7 +1,43 @@
 'use strict';
 // pk-plugin.mcsv.me. No libraries, no network calls: everything the page shows is in this file.
 
-const VERSION = '0.7.0';
+// The release the download buttons point at: files attached to the GitHub release of this tag.
+// `sizes` are the attached files' byte counts (written when the release is made).
+const RELEASE = {
+  version: '0.7.1', tag: 'v0.7.1', date: '2026-11-14', zip: 'pumpkin-plugins-0.7.1.zip',
+  sizes: {
+    'basics.wasm': 1731592, 'blocklog.wasm': 1368004, 'claims.wasm': 1118004, 'cleaner.wasm': 994192,
+    'discordlink.wasm': 1085722, 'imagemap.wasm': 1285152, 'libpregen.so': 42314784, 'login.wasm': 1093361,
+    'monitor.wasm': 1020513, 'motd.wasm': 966363, 'perms.wasm': 1597257, 'placeholders.wasm': 980922,
+    'pumpkin-plugins-0.7.1.zip': 15019489, 'resourcepack.wasm': 1079127, 'scripts.wasm': 1864507, 'skins.wasm': 1111777,
+    'tablist.wasm': 1002532, 'worldmap.wasm': 1295239, 'worldtools.wasm': 1203088,
+  },
+};
+const VERSION = RELEASE.version;
+const GH = 'https://github.com/artmasster/pumpkin-plugins';
+const download = (file) => `${GH}/releases/download/${RELEASE.tag}/${file}`;
+const fileOf = (p) => (p.native ? 'libpregen.so' : `${p.id}.wasm`);
+
+// Every release, newest first. Downloads exist for the newest one only (the GitHub repository
+// starts at 0.7.1); the older ones ran on MCSV's servers, and names before 0.6.0 were different.
+const HISTORY = [
+  { v: '0.7.1', d: '2026-11-14', th: 'รุ่นแรกที่เปิดให้ดาวน์โหลดบน GitHub · หน้าเว็บแก้สิทธิ์ของ Perms ปิดไว้จนกว่าจะตั้ง editor-url เอง', en: 'First release with downloads on GitHub. The Perms web editor stays off until you set editor-url.' },
+  { v: '0.7.0', d: '2026-11-14', th: 'เพิ่ม ResourcePack, Skins, Placeholders และ ImageMap รวมเป็น 18 ตัว', en: 'Adds ResourcePack, Skins, Placeholders and ImageMap: eighteen plugins.' },
+  { v: '0.6.2', d: '2026-11-14', th: 'Perms มีหน้าเว็บแก้สิทธิ์ /lp editor แบบ LuckPerms', en: 'Perms gets a LuckPerms-style web editor, /lp editor.' },
+  { v: '0.6.1', d: '2026-11-14', th: 'WorldMap เปิดเว็บแผนที่สดได้เองจากพอร์ตของเซิร์ฟ', en: 'WorldMap serves a live web map from a server port.' },
+  { v: '0.6.0', d: '2026-11-13', th: 'เปลี่ยนชื่อทุกตัวเป็นชื่อที่อ่านแล้วรู้ว่าทำอะไร (เช่น Nexus เป็น Basics) ข้อมูลเดิมย้ายตามให้เอง', en: 'Every plugin gets a plain name (Nexus became Basics); existing data moves over by itself.' },
+  { v: '0.5.2', d: '2026-11-13', th: 'WorldTools และ Perms รอบสอง · Claims กันธนูยิงในที่ดิน', en: 'Second round for WorldTools and Perms; Claims stops arrows on claimed land.' },
+  { v: '0.5.1', d: '2026-11-12', th: 'เพิ่ม WorldMap · Basics มีร้านค้า เมนูหีบ และป้ายลอย', en: 'Adds WorldMap; Basics gets a shop, chest menus and holograms.' },
+  { v: '0.5.0', d: '2026-11-12', th: 'เพิ่มเก้าตัว: Perms, Login, Claims, BlockLog, Scripts, DiscordLink, Monitor, Cleaner, Motd · ปลั๊กอินคุยกันเองได้', en: 'Nine new plugins: Perms, Login, Claims, BlockLog, Scripts, DiscordLink, Monitor, Cleaner, Motd. Plugins can talk to each other.' },
+  { v: '0.4.1', d: '2026-11-11', th: 'WorldTools งานใหญ่ไม่ทำให้เซิร์ฟกระตุก', en: 'Big WorldTools jobs no longer stall the server.' },
+  { v: '0.4.0', d: '2026-11-11', th: 'เพิ่ม TabList และ WorldTools · Basics มีคำสั่งชุดที่สาม', en: 'Adds TabList and WorldTools; a third set of Basics commands.' },
+  { v: '0.3.0', d: '2026-11-11', th: 'Basics: jail, freeze, warn, tempban, vanish, ขายของ · Pregen พักเองเมื่อเซิร์ฟช้า', en: 'Basics: jail, freeze, warn, tempban, vanish, selling. Pregen pauses when the server is slow.' },
+  { v: '0.2.2', d: '2026-11-11', th: 'แก้เซิร์ฟดับเมื่อพิมพ์คำสั่งที่มี argument ใน console · Pregen ทำงานต่อหลังรีสตาร์ต', en: 'Fixes a server stop when typing commands with arguments in the console; Pregen resumes after a restart.' },
+  { v: '0.2.0', d: '2026-11-10', th: 'Basics: ยศ แชต mute kit จดหมาย AFK และสุ่มเทเลพอร์ต', en: 'Basics: ranks, chat, mute, kits, mail, AFK and random teleport.' },
+  { v: '0.1.0', d: '2026-11-10', th: 'รุ่นแรก: Pregen และ Basics', en: 'First release: Pregen and Basics.' },
+];
+const SHOWN_RELEASES = 5;
+
 const BASE = ['fs.read.data', 'fs.write.data'];
 const NET = ['http.outbound', 'network.dns'];
 
@@ -93,7 +129,11 @@ const CATS = [
 const TEXT = {
   en: {
     nav_plugins: 'Plugins', nav_install: 'Install',
-    eyebrow: 'For Pumpkin 0.2.2 · Minecraft 26.3 · release 0.7.0',
+    eyebrow: 'For Pumpkin 0.2.2 · Minecraft 26.3 · release 0.7.1',
+    nav_dl: 'Download', cta_zip: 'Download all', cta_history: 'Version history',
+    rel_title: 'Downloads and version history', rel_latest: 'Latest', rel_zip: 'Download all (.zip)', rel_github: 'Release page on GitHub',
+    rel_note: 'The zip holds every plugin file, a pumpkin.toml example that grants every permission, and SHA256SUMS. Needs Pumpkin 0.2.2+26.3-26.60. Pregen is for Linux x86-64 only. Each plugin\'s card also has its own download.',
+    rel_more: 'Show all older releases', rel_less: 'Show fewer', dl_one: 'Download',
     h1a: 'plugins', h1b: 'a <em>Pumpkin</em> server cannot do without',
     lede: 'Paper .jar plugins do not run on Pumpkin. These are written from scratch in Rust to do the job of the ones you know, with the same commands.',
     finder_label: 'What did you use on Paper?', finder_idle: 'Type a name to see what stands in for it',
@@ -102,8 +142,8 @@ const TEXT = {
     way1_tag: 'Servers hosted at MCSV', way1_title: 'One button',
     way1_a: 'Open your Pumpkin server and go to Plugins', way1_b: 'Press Install on the one you want, or ask the AI on the server page to do it',
     way1_c: 'Restart once. New releases arrive by themselves whenever the server starts', way1_btn: 'Rent a Pumpkin server at MCSV',
-    way2_tag: 'Your own Pumpkin server', way2_title: 'Build from source',
-    way2_a: 'Build the .wasm files from the source on GitHub (there are no ready-made downloads yet)', way2_b: 'Put them in plugins/ and grant the permissions in pumpkin.toml',
+    way2_tag: 'Your own Pumpkin server', way2_title: 'Download and drop in',
+    way2_a: 'Download the whole set or one plugin from this page (or build from the source on GitHub)', way2_b: 'Put them in plugins/ and grant the permissions in pumpkin.toml',
     way2_c: 'Restart; the console prints Loaded &lt;name&gt;', way2_btn: 'Read how on GitHub',
     foot_a: 'Made by', foot_b: 'open source under MIT',
     foot_c: 'Names such as LuckPerms or WorldEdit belong to their own projects. They are named only to say which job each plugin does; there is no affiliation.',
@@ -112,6 +152,7 @@ const TEXT = {
     wasm: 'WASM plugin, runs in Pumpkin\'s sandbox. Data lives in', miss: 'No match for that name yet',
   },
   th: {
+    rel_less: 'ย่อรายการ', dl_one: 'ดาวน์โหลด',
     more: 'ดูรายละเอียด →', copied: 'คัดลอกแล้ว', instead: 'แทน', native: 'เป็น native library: ไม่ต้องให้สิทธิ์ sandbox แต่ไฟล์ต้องตรงกับรุ่นของ Pumpkin ที่ใช้พอดี',
     wasm: 'เป็นปลั๊กอิน WASM ทำงานใน sandbox ของ Pumpkin ข้อมูลอยู่ที่', miss: 'ยังไม่มีตัวที่ตรงกับชื่อนี้',
   },
@@ -244,6 +285,9 @@ function openSheet(p, push = true) {
     b.addEventListener('click', () => copy(c));
     box.append(b);
   });
+  $('sheet-dl').href = download(fileOf(p));
+  $('sheet-dl-text').textContent = `${t('dl_one')} ${fileOf(p)}`;
+  $('sheet-dl-size').textContent = size(RELEASE.sizes[fileOf(p)]);
   $('sheet-toml').hidden = $('sheet-toml-title').hidden = !!p.native;
   $('sheet-toml-code').textContent = p.native ? '' : toml(p);
   $('sheet-meta').textContent = p.native ? t('native') : `${t('wasm')} plugins/data/${p.id}/ · ${VERSION}`;
@@ -265,6 +309,39 @@ async function copy(text) {
   copy.timer = setTimeout(() => toast.classList.remove('on'), 1600);
 }
 
+/* ---------- downloads and version history ---------- */
+function size(bytes) {
+  if (!bytes) return '';
+  return bytes >= 1048576 ? `${(bytes / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
+function day(iso) {
+  const when = new Date(`${iso}T12:00:00Z`);
+  return when.toLocaleDateString(lang === 'th' ? 'th-TH-u-ca-gregory' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+let allReleases = false;
+function paintReleases() {
+  const zip = download(RELEASE.zip);
+  $('hero-zip').href = zip;
+  $('hero-ver').textContent = RELEASE.version;
+  $('latest-zip').href = zip;
+  $('latest-zip-size').textContent = size(RELEASE.sizes[RELEASE.zip]);
+  $('latest-gh').href = `${GH}/releases/tag/${RELEASE.tag}`;
+  $('latest-ver').textContent = `v${RELEASE.version}`;
+  $('latest-date').textContent = day(RELEASE.date);
+  $('latest-text').textContent = HISTORY[0][lang];
+  const list = $('timeline');
+  list.textContent = '';
+  list.classList.toggle('all', allReleases);
+  HISTORY.forEach((r, i) => {
+    const item = el('li', i < SHOWN_RELEASES ? 'rel' : 'rel older');
+    const top = el('div', 'rel-top');
+    top.append(el('span', 'rel-v', r.v), el('span', 'rel-d', day(r.d)));
+    item.append(top, el('p', '', r[lang]));
+    list.append(item);
+  });
+  $('more-rel').textContent = t(allReleases ? 'rel_less' : 'rel_more');
+}
+
 /* ---------- language ---------- */
 function paintText() {
   document.documentElement.lang = lang;
@@ -272,6 +349,7 @@ function paintText() {
   $('lang').textContent = lang === 'th' ? 'EN' : 'ไทย';
   buildChips();
   paintCards();
+  paintReleases();
   answer();
   if (shown) openSheet(shown, false);
 }
@@ -395,6 +473,7 @@ $('lang').addEventListener('click', () => {
   try { localStorage.setItem('lang', lang); } catch { /* private window */ }
   paintText();
 });
+$('more-rel').addEventListener('click', () => { allReleases = !allReleases; paintReleases(); });
 $('q').addEventListener('input', answer);
 $('finder').addEventListener('submit', (e) => {
   e.preventDefault();

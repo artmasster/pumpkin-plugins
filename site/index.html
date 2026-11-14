@@ -26,6 +26,7 @@
   </a>
   <nav class="top-links">
     <a href="#plugins" data-i18n="nav_plugins">ปลั๊กอิน</a>
+    <a href="#releases" data-i18n="nav_dl">ดาวน์โหลด</a>
     <a href="#install" data-i18n="nav_install">วิธีลง</a>
     <a href="https://github.com/artmasster/pumpkin-plugins" rel="noopener" target="_blank">GitHub</a>
     <button class="lang" id="lang" type="button" aria-label="Switch language">EN</button>
@@ -35,12 +36,17 @@
 <main id="top">
   <section class="hero">
     <div class="hero-copy">
-      <p class="eyebrow reveal"><span class="dot"></span><span data-i18n="eyebrow">สำหรับ Pumpkin 0.2.2 · Minecraft 26.3 · รุ่น 0.7.0</span></p>
+      <p class="eyebrow reveal"><span class="dot"></span><span data-i18n="eyebrow">สำหรับ Pumpkin 0.2.2 · Minecraft 26.3 · รุ่น 0.7.1</span></p>
       <h1 class="reveal">
         <span class="h1-top"><span class="count" id="count">18</span><span data-i18n="h1a">ปลั๊กอิน</span></span>
         <span class="h1-rest" data-i18n="h1b">ที่เซิร์ฟ <em>Pumpkin</em> ขาดไม่ได้</span>
       </h1>
       <p class="lede reveal" data-i18n="lede">ปลั๊กอิน .jar ของ Paper ใช้กับ Pumpkin ไม่ได้ ชุดนี้เขียนใหม่ทั้งหมดด้วย Rust ให้ทำงานแทนตัวที่คุณคุ้นเคย ด้วยคำสั่งชุดเดิม</p>
+
+      <div class="cta reveal">
+        <a class="btn btn-dl" id="hero-zip" href="#releases"><span class="dl-icon" aria-hidden="true"></span><span data-i18n="cta_zip">ดาวน์โหลดทั้งชุด</span> <b class="ver" id="hero-ver"></b></a>
+        <a class="btn btn-ghost" href="#releases" data-i18n="cta_history">ประวัติรุ่น</a>
+      </div>
 
       <form class="finder reveal" id="finder" autocomplete="off">
         <label for="q" data-i18n="finder_label">เคยใช้ตัวไหนบน Paper?</label>
@@ -69,6 +75,27 @@
     <p class="none" id="none" hidden data-i18n="none">ไม่มีตัวที่ตรงกับคำนี้</p>
   </section>
 
+  <section class="releases" id="releases">
+    <h2 data-i18n="rel_title">ดาวน์โหลดและประวัติรุ่น</h2>
+    <div class="rel-wrap">
+      <article class="latest">
+        <div class="latest-head">
+          <span class="latest-tag" data-i18n="rel_latest">รุ่นล่าสุด</span>
+          <span class="latest-date" id="latest-date"></span>
+        </div>
+        <p class="latest-ver" id="latest-ver"></p>
+        <p class="latest-text" id="latest-text"></p>
+        <div class="latest-btns">
+          <a class="btn btn-dl" id="latest-zip" href="#"><span class="dl-icon" aria-hidden="true"></span><span data-i18n="rel_zip">ดาวน์โหลดทั้งชุด (.zip)</span> <small class="size" id="latest-zip-size"></small></a>
+          <a class="btn btn-ghost" id="latest-gh" href="#" rel="noopener" target="_blank" data-i18n="rel_github">หน้า release บน GitHub</a>
+        </div>
+        <p class="latest-note" data-i18n="rel_note">ในไฟล์ zip มีไฟล์ปลั๊กอินทุกตัว ตัวอย่าง pumpkin.toml ที่ให้สิทธิ์ครบ และ SHA256SUMS · ต้องใช้กับ Pumpkin 0.2.2+26.3-26.60 · Pregen เป็นไฟล์สำหรับ Linux x86-64 เท่านั้น · จะเลือกโหลดทีละตัวก็ได้ที่การ์ดของแต่ละตัว</p>
+      </article>
+      <ol class="timeline" id="timeline"></ol>
+    </div>
+    <button class="more-rel" id="more-rel" type="button" data-i18n="rel_more">ดูรุ่นเก่าทั้งหมด</button>
+  </section>
+
   <section class="install" id="install">
     <h2 data-i18n="install_title">ลงได้สองทาง</h2>
     <div class="ways">
@@ -84,9 +111,9 @@
       </article>
       <article class="way">
         <span class="way-tag" data-i18n="way2_tag">เซิร์ฟ Pumpkin ของคุณเอง</span>
-        <h3 data-i18n="way2_title">build จากซอร์ส</h3>
+        <h3 data-i18n="way2_title">ดาวน์โหลดแล้ววาง</h3>
         <ol>
-          <li data-i18n="way2_a">build ไฟล์ .wasm จากซอร์สบน GitHub (ยังไม่มีไฟล์สำเร็จรูปให้โหลด)</li>
+          <li data-i18n="way2_a">ดาวน์โหลดทั้งชุดหรือทีละตัวจากหน้านี้ (หรือ build เองจากซอร์สบน GitHub)</li>
           <li data-i18n="way2_b">วางไฟล์ในโฟลเดอร์ plugins/ แล้วให้สิทธิ์ใน pumpkin.toml</li>
           <li data-i18n="way2_c">รีสตาร์ต แล้ว console จะขึ้น Loaded &lt;ชื่อ&gt;</li>
         </ol>
@@ -112,6 +139,7 @@
     <div class="cmds" id="sheet-cmds"></div>
     <h3 id="sheet-toml-title" data-i18n="toml">สิทธิ์ใน pumpkin.toml</h3>
     <button class="toml" id="sheet-toml" type="button"><code id="sheet-toml-code"></code><span class="copy-hint" data-i18n="copy">กดเพื่อคัดลอก</span></button>
+    <a class="btn btn-dl sheet-dl" id="sheet-dl" href="#"><span class="dl-icon" aria-hidden="true"></span><span id="sheet-dl-text"></span> <small class="size" id="sheet-dl-size"></small></a>
     <p class="sheet-meta" id="sheet-meta"></p>
   </div>
 </dialog>

@@ -3,7 +3,7 @@ resolver = "3"
 members = ["common", "pregen", "basics", "tablist", "worldtools", "blocklog", "perms", "scripts-plugin", "login", "monitor", "discordlink", "worldmap", "claims", "cleaner", "motd", "placeholders", "skins", "resourcepack", "imagemap", "tools/mcbot"]
 
 [workspace.package]
-version = "0.7.0"
+version = "0.7.1"
 edition = "2024"
 license = "MIT"
 publish = false

@@ -37,6 +37,8 @@ Names such as LuckPerms, WorldEdit or CoreProtect belong to their own projects. 
 
 Seventeen plugins are WASM components (`<id>.wasm`) and run in Pumpkin's sandbox. `pregen` is a native library (`libpregen.so`, Linux x86-64) because Pumpkin's WASM API cannot load or generate chunks.
 
+Ready-made files are on the [releases page](https://github.com/artmasster/pumpkin-plugins/releases), one file per plugin or all of them in one zip with a `pumpkin.toml.example` and `SHA256SUMS`. Release files are built with the Perms web editor off (see below).
+
 1. Put the file in the server's `plugins/` folder.
 2. A WASM plugin needs its sandbox permissions granted in `pumpkin.toml`, or the server asks on the console at every start:
 

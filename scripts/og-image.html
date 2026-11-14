@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="th">
+<html lang="en">
 <head>
 <!-- The share picture site/og.jpg (1200x630). Render: scripts/og-image.sh -->
 <meta charset="utf-8">
@@ -18,13 +18,16 @@ body { position: relative; font-family: P, sans-serif; color: #eef0ff; backgroun
 body::before { content: ''; position: absolute; inset: 0; opacity: .55;
   background-image: linear-gradient(rgba(160,170,255,.14) 1px, transparent 1px), linear-gradient(90deg, rgba(160,170,255,.14) 1px, transparent 1px);
   background-size: 48px 48px; -webkit-mask-image: radial-gradient(ellipse at 30% 40%, #000, transparent 75%); }
-.copy { position: absolute; left: 70px; top: 60px; width: 620px; }
+.copy { position: absolute; left: 70px; top: 48px; width: 620px; }
 .tag { display: inline-flex; align-items: center; gap: 10px; padding: 6px 16px; border: 1px solid rgba(160,170,255,.3); border-radius: 999px; font-size: 20px; font-weight: 500; color: #a3a8d6; background: rgba(255,255,255,.04); }
 .tag i { width: 10px; height: 10px; border-radius: 50%; background: #5dff9b; box-shadow: 0 0 10px #5dff9b; }
-.big { display: flex; align-items: baseline; gap: 18px; margin-top: 26px; }
-.n { font-size: 170px; line-height: 1; font-weight: 700; color: transparent; background: linear-gradient(170deg, #fff 10%, #ffb347 45%, #ff8a1f 80%); -webkit-background-clip: text; filter: drop-shadow(0 10px 34px rgba(255,138,31,.5)); }
+.pre { margin-top: 28px; font-size: 40px; font-weight: 700; line-height: 1.1; color: #a3a8d6; }
+.big { display: flex; align-items: baseline; gap: 18px; margin-top: -6px; }
+.alt { margin-top: 10px; font-size: 22px; white-space: nowrap; font-weight: 500; color: #a3a8d6; }
+.sub b.rust { color: #5ee6ff; background: linear-gradient(90deg, rgba(94,230,255,.2), rgba(94,230,255,.05)); }
+.n { font-size: 150px; line-height: 1; font-weight: 700; color: transparent; background: linear-gradient(170deg, #fff 10%, #ffb347 45%, #ff8a1f 80%); -webkit-background-clip: text; filter: drop-shadow(0 10px 34px rgba(255,138,31,.5)); }
 .w { font-size: 64px; font-weight: 700; line-height: 1.2; }
-.sub { margin-top: 4px; font-size: 38px; font-weight: 700; line-height: 1.4; }
+.sub { margin-top: 0; font-size: 46px; font-weight: 700; line-height: 1.4; }
 .sub b { color: #ff8a1f; padding: 0 .12em; border-radius: .18em; background: linear-gradient(90deg, rgba(255,138,31,.22), rgba(255,138,31,.06)); }
 .foot { position: absolute; left: 70px; bottom: 56px; display: flex; align-items: center; gap: 16px; font-size: 26px; font-weight: 700; }
 .cube { width: 22px; height: 22px; background: linear-gradient(135deg, #ffb347, #ff8a1f); box-shadow: 5px 5px 0 rgba(255,138,31,.35), 0 0 20px rgba(255,138,31,.6); transform: rotate(18deg); }
@@ -40,10 +43,12 @@ body::before { content: ''; position: absolute; inset: 0; opacity: .55;
 <div class="wall" id="wall"></div>
 <div class="copy">
   <p class="tag"><i></i>Pumpkin 0.2.2 · Minecraft 26.3</p>
-  <div class="big"><span class="n">18</span><span class="w">ปลั๊กอิน</span></div>
-  <p class="sub">สำหรับเซิร์ฟ <b>Pumpkin</b><br>ใช้แทน LuckPerms, EssentialsX,<br>WorldEdit และอีกมาก</p>
+  <p class="pre">We have</p>
+  <div class="big"><span class="n">18</span><span class="w">plugins</span></div>
+  <p class="sub">for <b>PumpkinMC</b><br>written in <b class="rust">Rust</b></p>
+  <p class="alt">Instead of LuckPerms, EssentialsX, WorldEdit…</p>
 </div>
-<p class="foot"><i class="cube"></i><em>pk<span>-plugin</span>.mcsv.me</em><small>เปิดซอร์ส · ดาวน์โหลดฟรี</small></p>
+<p class="foot"><i class="cube"></i><em>pk<span>-plugin</span>.mcsv.me</em><small>open source · free download</small></p>
 <script>
 for (const id of ['basics','perms','worldtools','blocklog','claims','worldmap','login','scripts','tablist','skins','imagemap','discordlink','monitor','pregen','placeholders','resourcepack']) {
   const img = document.createElement('img');

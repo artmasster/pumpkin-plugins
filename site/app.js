@@ -127,47 +127,83 @@ const CATS = [
 ];
 
 const TEXT = {
+  // English is the language index.html is written in; these are the strings only the script shows.
   en: {
-    nav_plugins: 'Plugins', nav_install: 'Install',
-    eyebrow: 'For Pumpkin 0.2.2 · Minecraft 26.3 · release 0.7.1',
-    nav_dl: 'Download', cta_zip: 'Download all', cta_history: 'Version history',
-    rel_title: 'Downloads and version history', rel_latest: 'Latest', rel_zip: 'Download all (.zip)', rel_github: 'Release page on GitHub',
-    rel_note: 'The zip holds every plugin file, a pumpkin.toml example that grants every permission, and SHA256SUMS. Needs Pumpkin 0.2.2+26.3-26.60. Pregen is for Linux x86-64 only. Each plugin\'s card also has its own download.',
-    rel_more: 'Show all older releases', rel_less: 'Show fewer', dl_one: 'Download',
-    news_new: 'New', news_link: 'What\'s new', follow: 'Get told about new releases:', follow_gh: 'Watch → Releases on GitHub',
-    h1a: 'plugins', h1b: 'a <em>Pumpkin</em> server cannot do without',
-    lede: 'Paper .jar plugins do not run on Pumpkin. These are written from scratch in Rust to do the job of the ones you know, with the same commands.',
-    finder_label: 'What did you use on Paper?', finder_idle: 'Type a name to see what stands in for it',
-    shelf_title: 'One at a time', none: 'Nothing matches that',
-    install_title: 'Two ways to install',
-    way1_tag: 'Servers hosted at MCSV', way1_title: 'One button',
-    way1_a: 'Open your Pumpkin server and go to Plugins', way1_b: 'Press Install on the one you want, or ask the AI on the server page to do it',
-    way1_c: 'Restart once. New releases arrive by themselves whenever the server starts', way1_btn: 'Rent a Pumpkin server at MCSV',
-    way2_tag: 'Your own Pumpkin server', way2_title: 'Download and drop in',
-    way2_a: 'Download the whole set or one plugin from this page (or build from the source on GitHub)', way2_b: 'Put them in plugins/ and grant the permissions in pumpkin.toml',
-    way2_c: 'Restart; the console prints Loaded &lt;name&gt;', way2_btn: 'Read how on GitHub',
-    foot_a: 'Made by', foot_b: 'open source under MIT',
-    foot_c: 'Names such as LuckPerms or WorldEdit belong to their own projects. They are named only to say which job each plugin does; there is no affiliation.',
-    rep: 'Stands in for', cmds: 'Main commands', toml: 'Permissions in pumpkin.toml', copy: 'Click to copy',
-    more: 'Details →', copied: 'Copied', instead: 'instead of', native: 'Native library: no sandbox permissions; the build must match your Pumpkin release exactly.',
-    wasm: 'WASM plugin, runs in Pumpkin\'s sandbox. Data lives in', miss: 'No match for that name yet',
+    rel_less: 'Show fewer',
+    dl_one: 'Download',
+    more: 'Details →',
+    copied: 'Copied',
+    instead: 'instead of',
+    native: 'Native library: no sandbox permissions; the build must match your Pumpkin release exactly.',
+    wasm: 'WASM plugin, runs in Pumpkin\'s sandbox. Data lives in',
+    miss: 'No match for that name yet',
   },
   th: {
-    rel_less: 'ย่อรายการ', dl_one: 'ดาวน์โหลด',
-    more: 'ดูรายละเอียด →', copied: 'คัดลอกแล้ว', instead: 'แทน', native: 'เป็น native library: ไม่ต้องให้สิทธิ์ sandbox แต่ไฟล์ต้องตรงกับรุ่นของ Pumpkin ที่ใช้พอดี',
-    wasm: 'เป็นปลั๊กอิน WASM ทำงานใน sandbox ของ Pumpkin ข้อมูลอยู่ที่', miss: 'ยังไม่มีตัวที่ตรงกับชื่อนี้',
+    nav_plugins: 'ปลั๊กอิน',
+    nav_dl: 'ดาวน์โหลด',
+    nav_install: 'วิธีลง',
+    news_new: 'มาใหม่',
+    news_link: 'ดูมีอะไรใหม่',
+    eyebrow: 'สำหรับ Pumpkin 0.2.2 · Minecraft 26.3 · รุ่น 0.7.1',
+    lede: 'ปลั๊กอิน .jar ของ Paper ใช้กับ Pumpkin ไม่ได้ ชุดนี้เขียนใหม่ทั้งหมดด้วย Rust ให้ทำงานแทนตัวที่คุณคุ้นเคย ด้วยคำสั่งชุดเดิม',
+    cta_zip: 'ดาวน์โหลดทั้งชุด',
+    cta_history: 'ประวัติรุ่น',
+    finder_label: 'เคยใช้ตัวไหนบน Paper?',
+    finder_idle: 'พิมพ์ชื่อ แล้วจะบอกตัวที่ใช้แทน',
+    shelf_title: 'เลือกดูทีละตัว',
+    none: 'ไม่มีตัวที่ตรงกับคำนี้',
+    rel_title: 'ดาวน์โหลดและประวัติรุ่น',
+    rel_latest: 'รุ่นล่าสุด',
+    rel_zip: 'ดาวน์โหลดทั้งชุด (.zip)',
+    rel_github: 'หน้า release บน GitHub',
+    follow: 'รับแจ้งเตือนเมื่อมีรุ่นใหม่:',
+    follow_gh: 'กด Watch → Releases บน GitHub',
+    rel_note: 'ในไฟล์ zip มีไฟล์ปลั๊กอินทุกตัว ตัวอย่าง pumpkin.toml ที่ให้สิทธิ์ครบ และ SHA256SUMS · ต้องใช้กับ Pumpkin 0.2.2+26.3-26.60 · Pregen เป็นไฟล์สำหรับ Linux x86-64 เท่านั้น · จะเลือกโหลดทีละตัวก็ได้ที่การ์ดของแต่ละตัว',
+    rel_more: 'ดูรุ่นเก่าทั้งหมด',
+    install_title: 'ลงได้สองทาง',
+    way1_tag: 'เซิร์ฟที่เช่ากับ MCSV',
+    way1_title: 'กดปุ่มเดียว',
+    way1_a: 'เปิดหน้าเซิร์ฟ Pumpkin แล้วเข้าเมนู ปลั๊กอิน',
+    way1_b: 'กด ติดตั้ง ที่ตัวที่ต้องการ หรือบอก AI ในหน้าเซิร์ฟให้ลงให้',
+    way1_c: 'รีสตาร์ตเซิร์ฟ 1 ครั้ง ระบบอัปเดตรุ่นใหม่ให้เองทุกครั้งที่เปิดเซิร์ฟ',
+    way1_btn: 'เช่าเซิร์ฟ Pumpkin ที่ MCSV',
+    way2_tag: 'เซิร์ฟ Pumpkin ของคุณเอง',
+    way2_title: 'ดาวน์โหลดแล้ววาง',
+    way2_a: 'ดาวน์โหลดทั้งชุดหรือทีละตัวจากหน้านี้ (หรือ build เองจากซอร์สบน GitHub)',
+    way2_b: 'วางไฟล์ในโฟลเดอร์ plugins/ แล้วให้สิทธิ์ใน pumpkin.toml',
+    way2_c: 'รีสตาร์ต แล้ว console จะขึ้น Loaded &lt;ชื่อ&gt;',
+    way2_btn: 'อ่านวิธีบน GitHub',
+    foot_a: 'ทำโดย',
+    foot_b: 'เปิดซอร์สแบบ MIT',
+    foot_c: 'ชื่ออย่าง LuckPerms หรือ WorldEdit เป็นของโครงการนั้น ๆ เราเอ่ยถึงเพื่อบอกว่าแต่ละตัวทำงานแทนอะไร ไม่ได้เกี่ยวข้องกัน',
+    rep: 'ใช้แทน',
+    cmds: 'คำสั่งหลัก',
+    toml: 'สิทธิ์ใน pumpkin.toml',
+    copy: 'กดเพื่อคัดลอก',
+    h1a: 'เรามี',
+    h1b: 'Plugins',
+    h1c: 'สำหรับ <em>PumpkinMC</em>',
+    h1d: 'เขียนด้วย <em class="rust">Rust</em>',
+    rel_less: 'ย่อรายการ',
+    dl_one: 'ดาวน์โหลด',
+    more: 'ดูรายละเอียด →',
+    copied: 'คัดลอกแล้ว',
+    instead: 'แทน',
+    native: 'เป็น native library: ไม่ต้องให้สิทธิ์ sandbox แต่ไฟล์ต้องตรงกับรุ่นของ Pumpkin ที่ใช้พอดี',
+    wasm: 'เป็นปลั๊กอิน WASM ทำงานใน sandbox ของ Pumpkin ข้อมูลอยู่ที่',
+    miss: 'ยังไม่มีตัวที่ตรงกับชื่อนี้',
   },
 };
 
 const $ = (id) => document.getElementById(id);
 const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
-let lang = 'th';
-try { lang = localStorage.getItem('lang') === 'en' ? 'en' : 'th'; } catch { /* private window */ }
+let lang = 'en';
+try { lang = localStorage.getItem('lang') === 'th' ? 'th' : 'en'; } catch { /* private window */ }
 let cat = 'all';
 
-// Thai is the page as written in index.html; keep it so switching back needs no reload.
-document.querySelectorAll('[data-i18n]').forEach((el) => { TEXT.th[el.dataset.i18n] ??= el.innerHTML; });
-const t = (key) => TEXT[lang][key] ?? TEXT.th[key] ?? key;
+// English is the page as written in index.html; keep it so switching back needs no reload.
+document.querySelectorAll('[data-i18n]').forEach((el) => { TEXT.en[el.dataset.i18n] ??= el.innerHTML; });
+const t = (key) => TEXT[lang][key] ?? TEXT.en[key] ?? key;
 
 function el(tag, cls, text) {
   const node = document.createElement(tag);
@@ -381,10 +417,13 @@ function showWhatsNew() {
 }
 
 /* ---------- language ---------- */
+const TITLE_EN = document.title;
+const TITLE_TH = 'Pumpkin Plugins: เรามี 18 ปลั๊กอินสำหรับ PumpkinMC เขียนด้วย Rust | MCSV';
 function paintText() {
   document.documentElement.lang = lang;
   document.querySelectorAll('[data-i18n]').forEach((node) => { node.innerHTML = t(node.dataset.i18n); });
-  $('lang').textContent = lang === 'th' ? 'EN' : 'ไทย';
+  $('lang').querySelectorAll('[data-lang]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
+  document.title = lang === 'th' ? TITLE_TH : TITLE_EN;
   buildChips();
   paintCards();
   paintReleases();
@@ -507,8 +546,10 @@ runConsole();
 runSky();
 countUp();
 
-$('lang').addEventListener('click', () => {
-  lang = lang === 'th' ? 'en' : 'th';
+$('lang').addEventListener('click', (e) => {
+  const pick = e.target.closest('[data-lang]');
+  if (!pick || pick.dataset.lang === lang) return;
+  lang = pick.dataset.lang;
   try { localStorage.setItem('lang', lang); } catch { /* private window */ }
   paintText();
 });

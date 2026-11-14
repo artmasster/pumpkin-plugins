@@ -1,0 +1,33 @@
+[package]
+name = "perms"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Permissions for Pumpkin by MCSV (LuckPerms-style: groups, inheritance, tracks, meta)"
+
+# WASM component plugin: build with `cargo build --release --target wasm32-wasip2 -p perms`.
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+toml.workspace = true
+# Regex nodes (`r=…`): small, linear-time, no backtracking blow-up on a hostile pattern
+regex-lite = "0.1"
+
+[target.'cfg(target_family = "wasm")'.dependencies]
+pumpkin-plugin-api.workspace = true
+# `http`: the web editor (`/lp editor`, `/lp applyedits`)
+mcsv-common = { workspace = true, features = ["http"] }
+
+# Lab-only reader plugin (see examples/perms_probe.rs); never published.
+[[example]]
+name = "perms_probe"
+crate-type = ["cdylib"]
+
+# Lab-only baseline for the cost of a permission check event; never published.
+[[example]]
+name = "perms_noop"
+crate-type = ["cdylib"]

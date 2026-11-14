@@ -1,0 +1,86 @@
+//! Messages. `{name}` placeholders are filled by `fmt`.
+
+pub fn text(lang: &str, key: &str) -> &'static str {
+    let th = lang != "en";
+    match (key, th) {
+        ("prefix", _) => "&8[&2Pregen&8]&r ",
+        ("help", true) => "&eคำสั่ง /pregen: &fstart, pause, continue, cancel, confirm, world, worldborder, spawn, center, radius, shape, pattern, corners, selection, progress, quiet, silent, reload, version",
+        ("help", false) => "&eCommands /pregen: &fstart, pause, continue, cancel, confirm, world, worldborder, spawn, center, radius, shape, pattern, corners, selection, progress, quiet, silent, reload, version",
+        ("no_perm", true) => "&cคุณไม่มีสิทธิ์ใช้คำสั่งนี้",
+        ("no_perm", false) => "&cYou do not have permission to use this command",
+        ("unknown", true) => "&cไม่รู้จักคำสั่ง {arg} ลอง /pregen help",
+        ("unknown", false) => "&cUnknown subcommand {arg}, try /pregen help",
+        ("bad_number", true) => "&cตัวเลขไม่ถูกต้อง: {arg}",
+        ("bad_number", false) => "&cInvalid number: {arg}",
+        ("bad_world", true) => "&cไม่พบโลก {arg} (มี: {list})",
+        ("bad_world", false) => "&cWorld {arg} not found (available: {list})",
+        ("bad_shape", true) => "&cไม่รู้จักรูปทรง {arg} (มี: {list})",
+        ("bad_shape", false) => "&cUnknown shape {arg} (available: {list})",
+        ("bad_pattern", true) => "&cไม่รู้จักรูปแบบ {arg} (มี: {list})",
+        ("bad_pattern", false) => "&cUnknown pattern {arg} (available: {list})",
+        ("usage", true) => "&cวิธีใช้: {arg}",
+        ("usage", false) => "&cUsage: {arg}",
+        ("set_world", true) => "&aตั้งโลกเป็น &f{arg}",
+        ("set_world", false) => "&aWorld set to &f{arg}",
+        ("set_center", true) => "&aตั้งจุดกลางเป็น &f{arg}",
+        ("set_center", false) => "&aCenter set to &f{arg}",
+        ("set_radius", true) => "&aตั้งรัศมีเป็น &f{arg}",
+        ("set_radius", false) => "&aRadius set to &f{arg}",
+        ("set_shape", true) => "&aตั้งรูปทรงเป็น &f{arg}",
+        ("set_shape", false) => "&aShape set to &f{arg}",
+        ("set_pattern", true) => "&aตั้งรูปแบบการสร้างเป็น &f{arg}",
+        ("set_pattern", false) => "&aPattern set to &f{arg}",
+        ("csv_missing", true) => "&cไม่พบไฟล์ {arg} ในโฟลเดอร์ปลั๊กอิน หรือไม่มีพิกัด",
+        ("csv_missing", false) => "&cFile {arg} not found in the plugin folder or it has no coordinates",
+        ("selection", true) => "&eที่เลือกไว้: &fโลก {world}, {shape}, กลาง {center}, รัศมี {radius}, รูปแบบ {pattern}, {total} chunks",
+        ("selection", false) => "&eSelection: &fworld {world}, {shape}, center {center}, radius {radius}, pattern {pattern}, {total} chunks",
+        ("started", true) => "&aเริ่มสร้างโลก &f{world}&a: {shape} กลาง {center} รัศมี {radius} รวม {total} chunks",
+        ("started", false) => "&aTask started for &f{world}&a: {shape} center {center} radius {radius}, {total} chunks",
+        ("running_exists", true) => "&eโลก {world} มีงานค้างอยู่แล้ว พิมพ์ /pregen confirm เพื่อเริ่มใหม่ทับ",
+        ("running_exists", false) => "&eA task already exists for {world}. Use /pregen confirm to replace it",
+        ("confirm_cancel", true) => "&eพิมพ์ /pregen confirm เพื่อยกเลิกงาน {world}",
+        ("confirm_cancel", false) => "&eUse /pregen confirm to cancel the task for {world}",
+        ("nothing_confirm", true) => "&cไม่มีอะไรให้ยืนยัน",
+        ("nothing_confirm", false) => "&cThere is nothing to confirm",
+        ("no_tasks", true) => "&eไม่มีงานที่กำลังทำ",
+        ("no_tasks", false) => "&eNo tasks are running",
+        ("no_saved", true) => "&cไม่มีงานที่หยุดไว้ให้ทำต่อ",
+        ("no_saved", false) => "&cThere are no paused tasks to continue",
+        ("paused", true) => "&eหยุดงาน {world} ไว้ที่ {percent}% (ทำต่อด้วย /pregen continue)",
+        ("paused", false) => "&eTask paused for {world} at {percent}% (resume with /pregen continue)",
+        ("waiting", true) => "&eงาน {world} หยุดอยู่ที่ {percent}% พิมพ์ /pregen continue เพื่อทำต่อ",
+        ("waiting", false) => "&eTask for {world} is paused at {percent}% (resume with /pregen continue)",
+        ("continued", true) => "&aทำงาน {world} ต่อจาก {percent}%",
+        ("continued", false) => "&aTask continued for {world} at {percent}%",
+        ("cancelled", true) => "&cยกเลิกงาน {world} แล้ว",
+        ("cancelled", false) => "&cTask cancelled for {world}",
+        ("progress", true) => "&f{world}&7: &f{done}&7/&f{total} chunks (&a{percent}%&7), ETA &f{eta}&7, &f{rate}&7 chunks/วินาที, ล่าสุด &f{current}",
+        ("progress", false) => "&f{world}&7: &f{done}&7/&f{total} chunks (&a{percent}%&7), ETA &f{eta}&7, &f{rate}&7 cps, current &f{current}",
+        ("finished", true) => "&aสร้างโลก {world} เสร็จ {total} chunks ใช้เวลา {time}",
+        ("finished", false) => "&aTask finished for {world}: {total} chunks in {time}",
+        ("quiet", true) => "&aแจ้งความคืบหน้าทุก {arg} วินาที",
+        ("quiet", false) => "&aProgress updates every {arg} seconds",
+        ("silent_on", true) => "&eปิดข้อความความคืบหน้าแล้ว",
+        ("silent_on", false) => "&eProgress messages disabled",
+        ("silent_off", true) => "&aเปิดข้อความความคืบหน้าแล้ว",
+        ("silent_off", false) => "&aProgress messages enabled",
+        ("reloaded", true) => "&aโหลดไฟล์ตั้งค่าใหม่แล้ว",
+        ("reloaded", false) => "&aConfiguration reloaded",
+        ("trim", true) => "&eการลบ chunk (trim) ยังไม่รองรับในรุ่นนี้",
+        ("trim", false) => "&eTrim is not supported in this version yet",
+        ("player_only", true) => "&cต้องใช้ในเกม หรือใส่พิกัดเอง",
+        ("player_only", false) => "&cRun this in game or give coordinates",
+        ("empty", true) => "&cพื้นที่ที่เลือกไม่มี chunk",
+        ("empty", false) => "&cThe selection contains no chunks",
+        _ => "",
+    }
+}
+
+pub fn fmt(lang: &str, key: &str, vars: &[(&str, String)]) -> String {
+    let mut out = String::from(text(lang, "prefix"));
+    out.push_str(text(lang, key));
+    for (k, v) in vars {
+        out = out.replace(&format!("{{{k}}}"), v);
+    }
+    out
+}

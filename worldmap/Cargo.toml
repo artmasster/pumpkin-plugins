@@ -1,0 +1,26 @@
+[package]
+name = "worldmap"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Web map for Pumpkin by MCSV (BlueMap-style)"
+
+# WASM component plugin: build with `cargo build --release --target wasm32-wasip2 -p worldmap`.
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+# Lab only: count the chunk events Pumpkin fires and show them in `/worldmap status`.
+probe = []
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+toml.workspace = true
+# Raw deflate for tile bands (pure Rust; the same crate std uses)
+miniz_oxide = "0.8"
+
+[target.'cfg(target_family = "wasm")'.dependencies]
+pumpkin-plugin-api.workspace = true
+mcsv-common.workspace = true

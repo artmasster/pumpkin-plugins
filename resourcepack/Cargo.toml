@@ -1,0 +1,21 @@
+[package]
+name = "resourcepack"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Resource packs for Pumpkin by MCSV (Resource Pack Downloader / ForcePack-style: send packs on join, per world, forced, with automatic hashes)"
+
+# WASM component plugin: build with `cargo build --release --target wasm32-wasip2 -p resourcepack`.
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+toml.workspace = true
+
+[target.'cfg(target_family = "wasm")'.dependencies]
+pumpkin-plugin-api.workspace = true
+# `http`: the plugin downloads a pack once to work out its SHA-1
+mcsv-common = { workspace = true, features = ["http"] }

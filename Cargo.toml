@@ -1,0 +1,36 @@
+[workspace]
+resolver = "3"
+members = ["common", "pregen", "basics", "tablist", "worldtools", "blocklog", "perms", "scripts-plugin", "login", "monitor", "discordlink", "worldmap", "claims", "cleaner", "motd", "placeholders", "skins", "resourcepack", "imagemap", "tools/mcbot"]
+
+[workspace.package]
+version = "0.7.0"
+edition = "2024"
+license = "MIT"
+publish = false
+
+[workspace.dependencies]
+# Pin the SDK to the Pumpkin release we sell. WASM plugins built for an older
+# plugin API keep loading on newer Pumpkin (versioned hosts), but rebuild and
+# retest on every new tag.
+pumpkin-plugin-api = { git = "https://github.com/Pumpkin-MC/Pumpkin", tag = "0.2.2+26.3-26.60" }
+# Native plugins (.so) link the server itself and must match the tag exactly.
+pumpkin = { git = "https://github.com/Pumpkin-MC/Pumpkin", tag = "0.2.2+26.3-26.60", package = "pumpkin-core" }
+pumpkin-util = { git = "https://github.com/Pumpkin-MC/Pumpkin", tag = "0.2.2+26.3-26.60" }
+pumpkin-api-macros = { git = "https://github.com/Pumpkin-MC/Pumpkin", tag = "0.2.2+26.3-26.60" }
+tokio = "1"
+mcsv-common = { path = "common" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = { version = "0.8", default-features = false, features = ["parse", "display"] }
+tracing = "0.1"
+# Pregen sets up its own console log lines (server-local timestamps); same crates as Pumpkin
+tracing-subscriber = { version = "0.3.23", default-features = false, features = ["fmt", "ansi", "time", "std"] }
+time = { version = "0.3", default-features = false, features = ["std", "formatting", "parsing"] }
+libc = "0.2"
+
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true
+codegen-units = 1
+panic = "abort"

@@ -1,0 +1,12 @@
+[package]
+name = "mcbot"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Headless Java test client for the Pumpkin release we build against (lab only)"
+
+[dependencies]
+# Packet ids come from the same Pumpkin tag, so the bot follows protocol changes.
+pumpkin-data = { git = "https://github.com/Pumpkin-MC/Pumpkin", tag = "0.2.2+26.3-26.60" }
+flate2 = "1"

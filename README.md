@@ -85,6 +85,7 @@ The Pumpkin release is pinned in the workspace `Cargo.toml`. For a newer Pumpkin
 | `tools/mcbot/` | A headless Minecraft 26.3 client for tests: joins, runs a script of commands and movements, prints what the server sent |
 | `scripts/console-smoke.py` | Types commands into a Pumpkin console that is a real terminal, the way a hosting panel runs it |
 | `scripts/publish.sh` | The release gate MCSV runs for its own hosting: tests, release build, load on the real server binary, console test |
+| `scripts/og-image.html`, `scripts/og-image.sh` | Source and renderer of the page's share picture (`site/og.jpg`) and PNG icons |
 | `site/` | The page at pk-plugin.mcsv.me: plain HTML, CSS and JavaScript, no build step. The plugin art in `site/img/` is MCSV's and is not covered by the MIT license; the font is Playpen Sans Thai under the OFL (`site/fonts/OFL.txt`) |
 
 ## License

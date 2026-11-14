@@ -151,6 +151,32 @@ h2 { font-size: clamp(26px, 3.4vw, 40px); line-height: 1.25; font-weight: 700; }
 .btn-ghost { color: var(--ink); background: transparent; border: 1px solid var(--line); box-shadow: none; }
 .btn-ghost:hover { border-color: var(--cyan); box-shadow: 0 0 30px rgba(94, 230, 255, .2); }
 
+/* "new release" notice: a bar under the top bar until the visitor has seen this release */
+.news { position: relative; z-index: 19; display: flex; align-items: center; justify-content: center; gap: 12px; padding: 9px 52px 9px 16px; font-size: 14.5px; background: linear-gradient(90deg, rgba(94, 230, 255, .14), rgba(155, 123, 255, .18), rgba(255, 138, 31, .14)); border-bottom: 1px solid rgba(94, 230, 255, .3); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); animation: news-in .6s var(--ease) both; }
+.news[hidden] { display: none; }
+.news.out { animation: news-out .35s var(--ease) forwards; }
+.news-badge { flex: none; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; color: #04121a; background: var(--cyan); box-shadow: 0 0 16px rgba(94, 230, 255, .6); animation: pulse-glow 2.4s ease-in-out infinite; }
+.news-text { min-width: 0; color: var(--dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.news-text b { font-family: var(--mono); color: var(--ink); }
+.news-link { flex: none; font-weight: 700; color: var(--pumpkin-2); text-decoration: none; }
+.news-link:hover { text-decoration: underline; }
+.news-close { position: absolute; right: 12px; top: 50%; width: 28px; height: 28px; margin-top: -14px; padding: 0; border: 0; border-radius: 8px; background: transparent; font-size: 0; transition: background .2s; }
+.news-close:hover { background: rgba(255, 255, 255, .08); }
+.news-close::before, .news-close::after { content: ''; position: absolute; top: 50%; left: 50%; width: 12px; height: 2px; margin: -1px 0 0 -6px; border-radius: 2px; background: var(--dim); transform: rotate(45deg); }
+.news-close::after { transform: rotate(-45deg); }
+#nav-dl { position: relative; }
+.new-dot { display: none; position: absolute; top: 1px; right: -9px; width: 7px; height: 7px; border-radius: 50%; background: var(--pumpkin); box-shadow: 0 0 0 0 rgba(255, 138, 31, .7); animation: ping 1.8s ease-out infinite; }
+.unseen .new-dot { display: block; }
+.latest.flash { animation: flash 1.4s var(--ease); }
+.follow { position: relative; z-index: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 12px; font-size: 14px; color: var(--dim); }
+.follow a { color: var(--cyan); font-weight: 700; text-decoration: none; }
+.follow a:hover { text-decoration: underline; }
+/* a bell: a rounded cup over a clapper */
+.follow-bell { position: relative; width: 14px; height: 15px; margin-right: 4px; }
+.follow-bell::before { content: ''; position: absolute; left: 1px; right: 1px; top: 0; bottom: 4px; border: 2px solid var(--pumpkin-2); border-radius: 7px 7px 2px 2px; }
+.follow-bell::after { content: ''; position: absolute; left: 5px; bottom: 0; width: 4px; height: 3px; border-radius: 0 0 3px 3px; background: var(--pumpkin-2); }
+.follow:hover .follow-bell { animation: ring .8s ease-in-out; }
+
 /* downloads */
 .cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
 .btn-dl { display: inline-flex; align-items: center; gap: 10px; }
@@ -246,6 +272,12 @@ dialog::backdrop { background: rgba(5, 6, 18, .72); backdrop-filter: blur(6px); 
 @keyframes float { 50% { transform: translateY(-12px) rotate(2deg); } }
 @keyframes sheet { from { opacity: 0; transform: translateY(30px) scale(.96); } }
 @keyframes hit { 0%, 60% { transform: scale(1.04); } }
+@keyframes news-in { from { opacity: 0; transform: translateY(-100%); } }
+@keyframes news-out { to { opacity: 0; transform: translateY(-100%); } }
+@keyframes pulse-glow { 50% { box-shadow: 0 0 4px rgba(94, 230, 255, .3); } }
+@keyframes ping { 70%, 100% { box-shadow: 0 0 0 8px rgba(255, 138, 31, 0); } }
+@keyframes flash { 0%, 40% { box-shadow: 0 0 0 3px var(--cyan), 0 0 60px rgba(94, 230, 255, .45); } }
+@keyframes ring { 20% { transform: rotate(14deg); } 40% { transform: rotate(-12deg); } 60% { transform: rotate(8deg); } 80% { transform: rotate(-4deg); } }
 @keyframes drop { 50% { transform: translateY(6px) rotate(45deg); } }
 
 @media (max-width: 860px) {

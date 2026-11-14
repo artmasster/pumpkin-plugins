@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>Pumpkin Plugins</title>
+  <rect width="64" height="64" rx="14" fill="#0a0b1e"/>
+  <path d="M32 9 52 20.5 32 32 12 20.5Z" fill="#ffc46b"/>
+  <path d="M12 20.5 32 32v23L12 43.5Z" fill="#ff8a1f"/>
+  <path d="M52 20.5 32 32v23l20-11.5Z" fill="#c45d00"/>
+  <path d="M32 9 52 20.5 32 32 12 20.5Z M12 20.5 32 32v23L12 43.5Z M52 20.5 32 32v23l20-11.5Z" fill="none" stroke="#0a0b1e" stroke-width="1.6" stroke-linejoin="round"/>
+  <path d="M27 16.5 32 13.6 37 16.5 32 19.4Z" fill="#5ee6ff"/>
+</svg>

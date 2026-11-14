@@ -134,6 +134,7 @@ const TEXT = {
     rel_title: 'Downloads and version history', rel_latest: 'Latest', rel_zip: 'Download all (.zip)', rel_github: 'Release page on GitHub',
     rel_note: 'The zip holds every plugin file, a pumpkin.toml example that grants every permission, and SHA256SUMS. Needs Pumpkin 0.2.2+26.3-26.60. Pregen is for Linux x86-64 only. Each plugin\'s card also has its own download.',
     rel_more: 'Show all older releases', rel_less: 'Show fewer', dl_one: 'Download',
+    news_new: 'New', news_link: 'What\'s new', follow: 'Get told about new releases:', follow_gh: 'Watch → Releases on GitHub',
     h1a: 'plugins', h1b: 'a <em>Pumpkin</em> server cannot do without',
     lede: 'Paper .jar plugins do not run on Pumpkin. These are written from scratch in Rust to do the job of the ones you know, with the same commands.',
     finder_label: 'What did you use on Paper?', finder_idle: 'Type a name to see what stands in for it',
@@ -342,6 +343,43 @@ function paintReleases() {
   $('more-rel').textContent = t(allReleases ? 'rel_less' : 'rel_more');
 }
 
+/* ---------- "new release" notice ----------
+   A bar under the top bar and a dot on "Download" until this visitor has seen the newest release.
+   Remembered per browser; shown only while the release is under NEWS_DAYS old, so a first visit
+   long after a release is not greeted with old news. */
+const NEWS_DAYS = 30;
+const SEEN_KEY = 'seen-release';
+function seenRelease() {
+  try { return localStorage.getItem(SEEN_KEY); } catch { return null; }
+}
+function isNews() {
+  const age = (Date.now() - Date.parse(`${RELEASE.date}T00:00:00Z`)) / 86400000;
+  return age < NEWS_DAYS && seenRelease() !== RELEASE.version;
+}
+function paintNews() {
+  const on = isNews();
+  $('news').hidden = !on;
+  $('nav-dl').classList.toggle('unseen', on);
+  $('news-ver').textContent = `v${RELEASE.version}`;
+  $('news-what').textContent = HISTORY[0][lang];
+}
+function markSeen(animate) {
+  try { localStorage.setItem(SEEN_KEY, RELEASE.version); } catch { /* private window: shows again next visit */ }
+  $('nav-dl').classList.remove('unseen');
+  const bar = $('news');
+  if (bar.hidden) return;
+  if (!animate || calm) { bar.hidden = true; return; }
+  bar.classList.add('out');
+  bar.addEventListener('animationend', () => { bar.hidden = true; bar.classList.remove('out'); }, { once: true });
+}
+function showWhatsNew() {
+  markSeen(true);
+  const card = document.querySelector('.latest');
+  card.classList.remove('flash');
+  void card.offsetWidth; // restart the animation
+  card.classList.add('flash');
+}
+
 /* ---------- language ---------- */
 function paintText() {
   document.documentElement.lang = lang;
@@ -350,6 +388,7 @@ function paintText() {
   buildChips();
   paintCards();
   paintReleases();
+  paintNews();
   answer();
   if (shown) openSheet(shown, false);
 }
@@ -474,6 +513,18 @@ $('lang').addEventListener('click', () => {
   paintText();
 });
 $('more-rel').addEventListener('click', () => { allReleases = !allReleases; paintReleases(); });
+$('news-close').addEventListener('click', () => markSeen(true));
+$('news-link').addEventListener('click', showWhatsNew);
+$('nav-dl').addEventListener('click', () => { if ($('nav-dl').classList.contains('unseen')) showWhatsNew(); });
+$('hero-zip').addEventListener('click', () => markSeen(false));
+$('latest-zip').addEventListener('click', () => markSeen(false));
+// Reaching the releases section on your own counts as seeing the news.
+if ('IntersectionObserver' in window) {
+  const watch = new IntersectionObserver((entries) => {
+    if (entries.some((e) => e.isIntersecting) && isNews()) { markSeen(true); watch.disconnect(); }
+  }, { threshold: 0.4 });
+  watch.observe(document.querySelector('.latest'));
+}
 $('q').addEventListener('input', answer);
 $('finder').addEventListener('submit', (e) => {
   e.preventDefault();

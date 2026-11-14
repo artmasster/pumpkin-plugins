@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="th">
+<head>
+<!-- The share picture site/og.jpg (1200x630). Render: scripts/og-image.sh -->
+<meta charset="utf-8">
+<style>
+@font-face { font-family: P; font-weight: 700; src: url('../site/fonts/playpen-sans-thai-700-thai.woff2') format('woff2'); unicode-range: U+0E01-0E5B; }
+@font-face { font-family: P; font-weight: 700; src: url('../site/fonts/playpen-sans-thai-700-latin.woff2') format('woff2'); unicode-range: U+0000-00FF, U+2000-206F; }
+@font-face { font-family: P; font-weight: 500; src: url('../site/fonts/playpen-sans-thai-500-thai.woff2') format('woff2'); unicode-range: U+0E01-0E5B; }
+@font-face { font-family: P; font-weight: 500; src: url('../site/fonts/playpen-sans-thai-500-latin.woff2') format('woff2'); unicode-range: U+0000-00FF, U+2000-206F; }
+* { box-sizing: border-box; margin: 0; }
+html, body { width: 1200px; height: 630px; overflow: hidden; }
+body { position: relative; font-family: P, sans-serif; color: #eef0ff; background: #0a0b1e;
+  background-image:
+    radial-gradient(700px 420px at 92% -8%, rgba(155,123,255,.35), transparent 60%),
+    radial-gradient(520px 380px at -6% 40%, rgba(94,230,255,.18), transparent 60%),
+    radial-gradient(600px 360px at 55% 118%, rgba(255,138,31,.22), transparent 60%); }
+body::before { content: ''; position: absolute; inset: 0; opacity: .55;
+  background-image: linear-gradient(rgba(160,170,255,.14) 1px, transparent 1px), linear-gradient(90deg, rgba(160,170,255,.14) 1px, transparent 1px);
+  background-size: 48px 48px; -webkit-mask-image: radial-gradient(ellipse at 30% 40%, #000, transparent 75%); }
+.copy { position: absolute; left: 70px; top: 60px; width: 620px; }
+.tag { display: inline-flex; align-items: center; gap: 10px; padding: 6px 16px; border: 1px solid rgba(160,170,255,.3); border-radius: 999px; font-size: 20px; font-weight: 500; color: #a3a8d6; background: rgba(255,255,255,.04); }
+.tag i { width: 10px; height: 10px; border-radius: 50%; background: #5dff9b; box-shadow: 0 0 10px #5dff9b; }
+.big { display: flex; align-items: baseline; gap: 18px; margin-top: 26px; }
+.n { font-size: 170px; line-height: 1; font-weight: 700; color: transparent; background: linear-gradient(170deg, #fff 10%, #ffb347 45%, #ff8a1f 80%); -webkit-background-clip: text; filter: drop-shadow(0 10px 34px rgba(255,138,31,.5)); }
+.w { font-size: 64px; font-weight: 700; line-height: 1.2; }
+.sub { margin-top: 4px; font-size: 38px; font-weight: 700; line-height: 1.4; }
+.sub b { color: #ff8a1f; padding: 0 .12em; border-radius: .18em; background: linear-gradient(90deg, rgba(255,138,31,.22), rgba(255,138,31,.06)); }
+.foot { position: absolute; left: 70px; bottom: 56px; display: flex; align-items: center; gap: 16px; font-size: 26px; font-weight: 700; }
+.cube { width: 22px; height: 22px; background: linear-gradient(135deg, #ffb347, #ff8a1f); box-shadow: 5px 5px 0 rgba(255,138,31,.35), 0 0 20px rgba(255,138,31,.6); transform: rotate(18deg); }
+.foot em { font-style: normal; } .foot span { color: #ff8a1f; }
+.foot small { margin-left: 8px; font-size: 20px; font-weight: 500; color: #a3a8d6; }
+.wall { position: absolute; right: -40px; top: 50%; display: grid; grid-template-columns: repeat(4, 118px); gap: 18px; transform: translateY(-50%) perspective(1100px) rotateY(-16deg) rotateX(6deg) rotateZ(-4deg); }
+.wall img { width: 118px; height: 118px; border-radius: 24px; box-shadow: 0 16px 34px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.06); }
+.wall img:nth-child(4n+1) { transform: translateY(26px); }
+.wall img:nth-child(4n+3) { transform: translateY(-18px); }
+</style>
+</head>
+<body>
+<div class="wall" id="wall"></div>
+<div class="copy">
+  <p class="tag"><i></i>Pumpkin 0.2.2 · Minecraft 26.3</p>
+  <div class="big"><span class="n">18</span><span class="w">ปลั๊กอิน</span></div>
+  <p class="sub">สำหรับเซิร์ฟ <b>Pumpkin</b><br>ใช้แทน LuckPerms, EssentialsX,<br>WorldEdit และอีกมาก</p>
+</div>
+<p class="foot"><i class="cube"></i><em>pk<span>-plugin</span>.mcsv.me</em><small>เปิดซอร์ส · ดาวน์โหลดฟรี</small></p>
+<script>
+for (const id of ['basics','perms','worldtools','blocklog','claims','worldmap','login','scripts','tablist','skins','imagemap','discordlink','monitor','pregen','placeholders','resourcepack']) {
+  const img = document.createElement('img');
+  img.src = `../site/img/${id}.webp`;
+  document.getElementById('wall').append(img);
+}
+</script>
+</body>
+</html>

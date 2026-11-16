@@ -1,6 +1,6 @@
 # MCSV Pumpkin plugins
 
-Nineteen plugins for [Pumpkin](https://github.com/Pumpkin-MC/Pumpkin), the Minecraft Java server written in Rust. Paper and Spigot `.jar` plugins do not run on Pumpkin, so each plugin here covers the job of a plugin that server owners already know, with the same commands where that makes sense. All of them are written from scratch in Rust for Pumpkin's plugin API; none contains code from the plugin it stands in for.
+Twenty-one plugins for [Pumpkin](https://github.com/Pumpkin-MC/Pumpkin), the Minecraft Java server written in Rust. Paper and Spigot `.jar` plugins do not run on Pumpkin, so each plugin here covers the job of a plugin that server owners already know, with the same commands where that makes sense. All of them are written from scratch in Rust for Pumpkin's plugin API; none contains code from the plugin it stands in for.
 
 They are made by [MCSV](https://mcsv.me), a game server host, and run on its Pumpkin servers. Everything here also works on a Pumpkin server you run yourself.
 
@@ -30,13 +30,15 @@ Browse them at **[pk-plugin.mcsv.me](https://pk-plugin.mcsv.me/)**.
 | `placeholders` | PlaceholderAPI | `%player_name%` style placeholders for the other plugins, including values they provide | `/papi parse` `/papi list` |
 | `imagemap` | ImageOnMap | Turns an image link into a map or a poster of several maps | `/tomap <link> [2x2]` `/imagemap list` |
 | `customitems` | Oraxen / ItemsAdder / Nexo | Items with their own look from a few lines of config and a picture: builds and sends the resource pack itself, a crafting window, glyphs that can be typed into any text | `/craft` · admin `/customitems` `/customitems give` `/customitems reload` |
+| `models` | ModelEngine | Animated models made in Blockbench (`.bbmodel`): standing in the world, on a creature or worn by a player, with the resource pack built and sent by the plugin and a message interface for other plugins | `/models place` `/models attach` `/models play` `/models list` |
+| `mobs` | MythicMobs | Custom mobs from a few lines of config: their own health, damage, speed and size, behaviour, equipment, skills that happen on a timer or when hurt, drops, boss bars and spawners; they wear a model when Models is installed | `/mobs spawn` `/mobs spawner add` `/mobs list` `/mobs near` |
 | `pregen` | Chunky | Pre-generates the world; pause, continue, and resume after a restart | `/pregen start` `/pregen pause` `/pregen continue` (`/chunky`) |
 
 Names such as LuckPerms, WorldEdit or CoreProtect belong to their own projects. They are named here only to say which job each plugin does. These plugins are not affiliated with or endorsed by those projects.
 
 ## Install
 
-Eighteen plugins are WASM components (`<id>.wasm`) and run in Pumpkin's sandbox. `pregen` is a native library (`libpregen.so`, Linux x86-64) because Pumpkin's WASM API cannot load or generate chunks.
+Twenty plugins are WASM components (`<id>.wasm`) and run in Pumpkin's sandbox. `pregen` is a native library (`libpregen.so`, Linux x86-64) because Pumpkin's WASM API cannot load or generate chunks.
 
 Ready-made files are on the [releases page](https://github.com/artmasster/pumpkin-plugins/releases), one file per plugin or all of them in one zip with a `pumpkin.toml.example` and `SHA256SUMS`. Release files are built with the Perms web editor off (see below).
 
@@ -53,7 +55,7 @@ Ready-made files are on the [releases page](https://github.com/artmasster/pumpki
    | Plugins | Extra permissions | Why |
    |---|---|---|
    | `perms`, `discordlink`, `resourcepack`, `skins`, `imagemap` | `http.outbound`, `network.dns` | Web editor, Discord, pack hashes, Mojang skins, image downloads |
-   | `worldmap`, `customitems` | `network.tcp.bind` | The built-in web map, and the resource pack download of CustomItems. Without it the plugin is not loaded at all |
+   | `worldmap`, `customitems`, `models` | `network.tcp.bind` | The built-in web map, and the resource pack download of CustomItems and Models. Without it the plugin is not loaded at all |
 
 3. Restart the server. The console prints `Loaded <id> (<version>)` for each plugin.
 
@@ -67,6 +69,7 @@ The native `pregen` build links one exact Pumpkin release. Use the build made fo
 - **Join and quit messages are left alone**, and the server list keeps real player counts. Tools that read `X joined the game` or the ping response keep working.
 - **Perms web editor.** `/lp editor` needs an editor service. A plain build has none and says so; the `/lp` commands do everything the editor does. Set `editor-url` in `plugins/data/perms/config.toml` to use a service of your own: the plugin sends `POST <url>/api/perms-editor` with the JSON session and expects `{"code": "…"}`, then `GET <url>/api/perms-editor/<code>` returns what was stored. MCSV runs such a service for the servers it hosts.
 - **CustomItems.** Describe items in `plugins/data/customitems/items/*.toml`, put pictures in `textures/` and any other pack files in `pack/`; `/customitems reload` builds `pack.zip`. Players get it when the plugin knows where it is: set `pack.url` to a link you host it at, or `pack.port` and `pack.host` to let the plugin serve it. Recipes are made in the plugin's own window (`/craft`), from items of the game and from other custom items: a crafting table cannot give a custom item on Pumpkin 0.2.2, which keeps only the kind and the number of a recipe's result. The items look as intended in Java clients only; blocks and furniture are not in yet.
+- **Models.** Put Blockbench projects (`.bbmodel`, pictures saved inside the file) into `plugins/data/models/models/` and run `/models reload`; the first start writes an example to try with `/models place example`. Every group of cubes becomes one item display; animations named `idle`, `walk`, `hurt` and `death` start by themselves, a group named `h_...` follows where a creature looks, `tag_...` is where a name stands, and a cube named `hitbox` is what can be clicked. A cube turned in a way the game's model files cannot hold becomes a part of its own; meshes are left out. Players get the pack the same way as with CustomItems (`pack.url`, or `pack.port` and `pack.host`), as a second pack. A model on a creature placed by command lasts until the creature unloads; other plugins ask for models with JSON messages (the table is above `fn ipc` in `models/src/plugin.rs`). One moved bone costs the server about 6 microseconds; `update-interval`, `far-distance` and `max-updates-per-tick` in `config.toml` bound it.- **Mobs.** Describe mobs in `plugins/data/mobs/mobs/*.toml` (the first start writes examples): the creature of the game each one is, its numbers, `ai` to replace its behaviour, `hostile`, `equipment`, `drops`, a `model` of the Models plugin, and `skills` with `on` (`spawn`, `hurt`, `death`, `timer <seconds>`, `health <percent>`) and a list of things to `do` (`message`, `sound`, `particle`, `damage`, `heal`, `effect`, `summon`, `leap`, `ignite`, `teleport`, `animation`, `command`). `/mobs spawn <mob>` makes one, `/mobs spawner add <name> <mob>` keeps a place filled while players are near. A mob lives while a player is within `despawn-range` and is not carried over a restart; spawners are. Pumpkin 0.2.2 does not say who hurt a creature, so drops go to the player closest to the mob when it was last hit, straight into the inventory (`customitems:<id>` gives an item of CustomItems), and the creature's own drops still fall.
 - **Plugins talk to each other** when they are installed together: Basics chat reaches DiscordLink and BlockLog, Placeholders reads balances from Basics and prefixes from Perms, WorldTools edits are logged by BlockLog, and every plugin leaves players alone until Login has let them in.
 
 ## Build
@@ -84,7 +87,10 @@ The Pumpkin release is pinned in the workspace `Cargo.toml`. For a newer Pumpkin
 |---|---|
 | `<id>/` | One crate per plugin (`scripts-plugin/` holds `scripts`) |
 | `common/` | Shared code: coloured text, config and state files, HTTP without blocking the tick, messages between plugins |
-| `webserver/` | A very small HTTP server that runs from the server tick: the web map of WorldMap and the pack download of CustomItems |
+| `webserver/` | A very small HTTP server that runs from the server tick: the web map of WorldMap and the pack download of CustomItems and Models |
+| `packfile/` | A resource pack as a list of files and the zip that holds them, the same bytes for the same content: shared by CustomItems and Models |
+| `scripts/example-model.py` | Writes the example model of Models (`models/src/example.bbmodel`), picture included |
+| `scripts/particle-table.py` | Writes `common/src/particles.rs` (particle names) from the WIT file of the pinned Pumpkin tag |
 | `tools/mcbot/` | A headless Minecraft 26.3 client for tests: joins, runs a script of commands and movements, prints what the server sent |
 | `scripts/console-smoke.py` | Types commands into a Pumpkin console that is a real terminal, the way a hosting panel runs it |
 | `scripts/publish.sh` | The release gate MCSV runs for its own hosting: tests, release build, load on the real server binary, console test |

@@ -1,0 +1,24 @@
+[package]
+name = "models"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Animated models from Blockbench files for Pumpkin by MCSV (ModelEngine style)"
+
+# WASM component plugin: build with `cargo build --release --target wasm32-wasip2 -p models`.
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+toml.workspace = true
+# The files of a resource pack and the zip that holds them
+mcsv-pack.workspace = true
+# Serves the resource pack to players when the owner has nowhere else to host it
+mcsv-web.workspace = true
+
+[target.'cfg(target_family = "wasm")'.dependencies]
+pumpkin-plugin-api.workspace = true
+mcsv-common.workspace = true

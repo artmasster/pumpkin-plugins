@@ -17,6 +17,11 @@
 //!   type=<n>` lines, `type=N` means the newest entity of that type)
 //! `MCBOT_FIND=a,b` prints `FOUND <text> in <packet>` for every play packet that carries one of
 //! these strings: enough to see an item model or a font reach the client without reading items.
+//! `MCBOT_META=1` prints what entities are told: `META <entity id> <index>:<value> ...` for
+//! entity data (the value types of display entities are read; another type ends the line as
+//! `<index>:type<n>..`), `PASSENGERS <vehicle> [ids]`, `REMOVED [ids]`. It also counts every
+//! play packet: the step `counts` prints `COUNTS <packet>=<n> ...` and `MOVES type<n>=<count>
+//! ...` (movement packets by the type of the entity that moved) since the last `counts`.
 //! Also printed: `BLOCK x y z <state id>` for single block updates, `WINDOW id type title`,
 //! `CONTENT window state slots` when a window's items arrive, `WINDOWCLOSED`.
 use std::io::{Read, Write};
@@ -262,12 +267,59 @@ fn action(status: i32, at: (i32, i32, i32), seq: i32) -> Vec<u8> {
 }
 
 /// The play packets a test looks for by name; the rest are shown by number.
+/// The entries of an entity data packet as text: `<index>:<value>`. Reads the value types a
+/// display entity uses (byte, int, float, bool, vector, quaternion) and stops at any other,
+/// whose length it cannot know: `<index>:type<n>..`.
+fn entity_data(r: &mut Rd) -> String {
+    let f32s = |r: &mut Rd, n: usize| -> Option<String> {
+        let mut out = Vec::new();
+        for _ in 0..n {
+            out.push(format!("{:.3}", f32::from_be_bytes(r.take(4)?.try_into().ok()?)));
+        }
+        Some(out.join(","))
+    };
+    let mut out = Vec::new();
+    loop {
+        let Some(&[index]) = r.take(1) else { break };
+        if index == 0xff {
+            break;
+        }
+        let Some(kind) = r.varint() else { break };
+        let value = match kind {
+            0 => r.take(1).map(|b| b[0].to_string()),
+            1 => r.varint().map(|v| v.to_string()),
+            3 => f32s(r, 1),
+            8 => r.take(1).map(|b| (b[0] != 0).to_string()),
+            39 => f32s(r, 3).map(|v| format!("({v})")),
+            40 => f32s(r, 4).map(|v| format!("[{v}]")),
+            _ => None,
+        };
+        match value {
+            Some(v) => out.push(format!("{index}:{v}")),
+            None => {
+                out.push(format!("{index}:type{kind}.."));
+                break;
+            }
+        }
+    }
+    out.join(" ")
+}
+
 fn packet_name(id: i32) -> String {
     let known = [
         (cb::play::CONTAINER_SET_SLOT.0, "set_slot"),
         (cb::play::CONTAINER_SET_CONTENT.0, "set_content"),
         (cb::play::SET_PLAYER_INVENTORY.0, "set_player_inventory"),
         (cb::play::SET_ENTITY_DATA.0, "entity_data"),
+        (cb::play::ADD_ENTITY.0, "add_entity"),
+        (cb::play::REMOVE_ENTITIES.0, "remove_entities"),
+        (cb::play::SET_PASSENGERS.0, "set_passengers"),
+        (cb::play::MOVE_ENTITY_POS.0, "move_pos"),
+        (cb::play::MOVE_ENTITY_POS_ROT.0, "move_pos_rot"),
+        (cb::play::MOVE_ENTITY_ROT.0, "move_rot"),
+        (cb::play::ROTATE_HEAD.0, "rotate_head"),
+        (cb::play::ENTITY_POSITION_SYNC.0, "position_sync"),
+        (cb::play::TELEPORT_ENTITY.0, "teleport_entity"),
         (cb::play::OPEN_SCREEN.0, "open_screen"),
         (cb::play::SOUND.0, "sound"),
         (cb::play::SYSTEM_CHAT.0, "chat"),
@@ -369,12 +421,20 @@ fn main() {
     let window = Arc::new(Mutex::new((0i32, 0i32)));
     // The newest entity of each type the server showed us (type number -> entity id)
     let seen = Arc::new(Mutex::new(std::collections::HashMap::<i32, i32>::new()));
+    // MCBOT_META=1: print what entities are told (`META`, `PASSENGERS`, `REMOVED`) and count
+    // every play packet for the `counts` step
+    let meta = std::env::var("MCBOT_META").is_ok_and(|v| !v.is_empty() && v != "0");
+    let counts = Arc::new(Mutex::new(std::collections::BTreeMap::<i32, u64>::new()));
+    let moves = Arc::new(Mutex::new(std::collections::BTreeMap::<i32, u64>::new()));
     let (done_tx, done_rx) = mpsc::channel::<()>();
     {
         let conn = conn.clone();
         let pos = pos.clone();
         let window = window.clone();
         let seen = seen.clone();
+        let counts = counts.clone();
+        let moves = moves.clone();
+        let mut kinds = std::collections::HashMap::<i32, i32>::new();
         let find: Vec<String> = std::env::var("MCBOT_FIND").unwrap_or_default().split(',').filter(|s| !s.is_empty()).map(str::to_owned).collect();
         std::thread::spawn(move || {
             let mut rconn = Conn { stream: reader, threshold };
@@ -392,13 +452,35 @@ fn main() {
                         println!("FOUND {mark} in {} bytes={}", packet_name(id), body.len());
                     }
                 }
+                if meta {
+                    *counts.lock().unwrap().entry(id).or_insert(0) += 1;
+                }
                 if id == cb::play::ADD_ENTITY.0 {
                     // entity id, uuid, type
                     let eid = r.varint().unwrap_or(-1);
                     let _uuid = r.take(16);
                     let kind = r.varint().unwrap_or(-1);
                     seen.lock().unwrap().insert(kind, eid);
+                    kinds.insert(eid, kind);
                     println!("ENTITY {eid} type={kind}");
+                } else if meta
+                    && [cb::play::MOVE_ENTITY_POS.0, cb::play::MOVE_ENTITY_POS_ROT.0, cb::play::MOVE_ENTITY_ROT.0, cb::play::ROTATE_HEAD.0, cb::play::ENTITY_POSITION_SYNC.0, cb::play::TELEPORT_ENTITY.0].contains(&id)
+                {
+                    // Movement by entity type: how much the server says about entities that only ride
+                    let kind = r.varint().and_then(|eid| kinds.get(&eid).copied()).unwrap_or(-1);
+                    *moves.lock().unwrap().entry(kind).or_insert(0) += 1;
+                } else if meta && id == cb::play::SET_ENTITY_DATA.0 {
+                    let eid = r.varint().unwrap_or(-1);
+                    println!("META {eid} {}", entity_data(&mut r));
+                } else if meta && id == cb::play::SET_PASSENGERS.0 {
+                    let vehicle = r.varint().unwrap_or(-1);
+                    let n = r.varint().unwrap_or(0);
+                    let ids: Vec<String> = (0..n).filter_map(|_| r.varint()).map(|v| v.to_string()).collect();
+                    println!("PASSENGERS {vehicle} [{}]", ids.join(","));
+                } else if meta && id == cb::play::REMOVE_ENTITIES.0 {
+                    let n = r.varint().unwrap_or(0);
+                    let ids: Vec<String> = (0..n).filter_map(|_| r.varint()).map(|v| v.to_string()).collect();
+                    println!("REMOVED [{}]", ids.join(","));
                 } else if id == cb::play::KEEP_ALIVE.0 {
                     let _ = conn.lock().unwrap().send(sb::play::KEEP_ALIVE.0, &body);
                 } else if id == cb::play::PING.0 {
@@ -708,6 +790,17 @@ fn main() {
                 put_varint(&mut b, wid);
                 let _ = conn.lock().unwrap().send(sb::play::CONTAINER_CLOSE.0, &b);
                 *window.lock().unwrap() = (0, 0);
+            }
+            "counts" => {
+                // Packets since the last `counts` step, by name (needs MCBOT_META=1)
+                let mut map = counts.lock().unwrap();
+                let line: Vec<String> = map.iter().map(|(id, n)| format!("{}={n}", packet_name(*id))).collect();
+                println!("COUNTS {}", line.join(" "));
+                map.clear();
+                let mut by_kind = moves.lock().unwrap();
+                let line: Vec<String> = by_kind.iter().map(|(kind, n)| format!("type{kind}={n}")).collect();
+                println!("MOVES {}", line.join(" "));
+                by_kind.clear();
             }
             "quit" => break,
             other => println!("BADSTEP {other}"),

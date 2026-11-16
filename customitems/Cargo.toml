@@ -14,10 +14,14 @@ crate-type = ["cdylib", "rlib"]
 serde.workspace = true
 serde_json.workspace = true
 toml.workspace = true
-# Deflate for the text files of the resource pack (pure Rust; the same crate std uses)
-miniz_oxide = "0.8"
+# The files of a resource pack and the zip that holds them
+mcsv-pack.workspace = true
 # Serves the resource pack to players when the owner has nowhere else to host it
 mcsv-web.workspace = true
+
+[dev-dependencies]
+# The tests read the zip back
+miniz_oxide = "0.8"
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 pumpkin-plugin-api.workspace = true

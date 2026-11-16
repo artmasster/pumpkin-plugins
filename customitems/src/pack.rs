@@ -7,41 +7,12 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use crate::defs::{Glyph, Item, Look, NS, PackConfig, Problem};
 
-pub const MAX_FILES: usize = 20_000;
-/// The game refuses server packs above 250 MB.
-pub const MAX_BYTES: usize = 200 * 1024 * 1024;
+pub use mcsv_pack::{Entry, MAX_BYTES, MAX_FILES, crc32, id_text, is_png, valid_pack_path, zip};
+
 pub const FONT: &str = "assets/minecraft/font/default.json";
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Entry {
-    pub path: String,
-    pub data: Vec<u8>,
-}
-
-impl Entry {
-    fn json(path: String, value: &serde_json::Value) -> Entry {
-        Entry { path, data: serde_json::to_vec_pretty(value).unwrap_or_default() }
-    }
-}
-
-/// A path the game accepts inside a pack, and one of the places a pack has files in.
-pub fn valid_pack_path(path: &str) -> bool {
-    let plain = |seg: &str| !seg.is_empty() && seg != "." && seg != ".." && seg.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || matches!(b, b'_' | b'-' | b'.'));
-    path.len() <= 200 && path.split('/').all(plain) && (path == "pack.png" || path == "pack.mcmeta" || (path.starts_with("assets/") && path.matches('/').count() >= 2))
-}
-
-pub fn is_png(data: &[u8]) -> bool {
-    data.starts_with(&[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A])
-}
-
 fn mcmeta(cfg: &PackConfig) -> serde_json::Value {
-    let mut pack = serde_json::json!({ "description": cfg.description, "min_format": cfg.format_min, "max_format": cfg.format_max });
-    // Games older than format 65 read the old fields; newer ones want them gone
-    if cfg.format_min < 65 {
-        pack["pack_format"] = cfg.format_min.into();
-        pack["supported_formats"] = serde_json::json!([cfg.format_min, cfg.format_max]);
-    }
-    serde_json::json!({ "pack": pack })
+    mcsv_pack::mcmeta(&cfg.description, cfg.format_min, cfg.format_max)
 }
 
 pub struct Generated {
@@ -142,77 +113,7 @@ pub fn assemble(generated: Vec<Entry>, own: Vec<Entry>, out: &mut Vec<Problem>) 
 /// The id the pack is sent under: always the same, so a new pack replaces the old one. It is
 /// made from the plugin's name and looks like any other UUID (version 4, variant 1).
 pub fn pack_id() -> (u64, u64) {
-    let fnv = |seed: u64| NS.bytes().fold(0xcbf2_9ce4_8422_2325 ^ seed, |h, b| (h ^ u64::from(b)).wrapping_mul(0x0000_0100_0000_01b3));
-    ((fnv(0) & !0xF000) | 0x4000, (fnv(0x9E37_79B9_7F4A_7C15) & !(0xC000 << 48)) | (0x8000 << 48))
-}
-
-/// `8-4-4-4-12` hex, the way the client reports a pack id back.
-pub fn id_text(id: (u64, u64)) -> String {
-    let h = format!("{:016x}{:016x}", id.0, id.1);
-    format!("{}-{}-{}-{}-{}", &h[0..8], &h[8..12], &h[12..16], &h[16..20], &h[20..32])
-}
-
-pub fn crc32(data: &[u8]) -> u32 {
-    let mut table = [0u32; 256];
-    for (i, slot) in table.iter_mut().enumerate() {
-        let mut c = i as u32;
-        for _ in 0..8 {
-            c = if c & 1 != 0 { 0xEDB8_8320 ^ (c >> 1) } else { c >> 1 };
-        }
-        *slot = c;
-    }
-    !data.iter().fold(!0u32, |crc, b| table[((crc ^ u32::from(*b)) & 0xFF) as usize] ^ (crc >> 8))
-}
-
-/// Text compresses well; pictures and sounds are compressed already and go in as they are.
-fn worth_deflating(path: &str) -> bool {
-    matches!(path.rsplit('.').next(), Some("json" | "mcmeta" | "txt" | "lang" | "fsh" | "vsh" | "glsl" | "properties"))
-}
-
-/// A zip of the entries, in the order given. Always the same bytes for the same entries.
-pub fn zip(entries: &[Entry]) -> Vec<u8> {
-    const DATE: u16 = (1 << 5) | 1; // 1 January 1980, the first day a zip can name
-    let mut out = Vec::with_capacity(entries.iter().map(|e| e.data.len() + e.path.len() * 2 + 80).sum::<usize>() + 22);
-    let mut central = Vec::new();
-    for entry in entries {
-        let packed = worth_deflating(&entry.path).then(|| miniz_oxide::deflate::compress_to_vec(&entry.data, 8)).filter(|p| p.len() < entry.data.len());
-        let (method, body): (u16, &[u8]) = match &packed {
-            Some(p) => (8, p),
-            None => (0, &entry.data),
-        };
-        let offset = out.len() as u32;
-        let mut head = Vec::with_capacity(26);
-        head.extend_from_slice(&20u16.to_le_bytes()); // version needed
-        head.extend_from_slice(&0u16.to_le_bytes()); // flags
-        head.extend_from_slice(&method.to_le_bytes());
-        head.extend_from_slice(&0u16.to_le_bytes()); // time
-        head.extend_from_slice(&DATE.to_le_bytes());
-        head.extend_from_slice(&crc32(&entry.data).to_le_bytes());
-        head.extend_from_slice(&(body.len() as u32).to_le_bytes());
-        head.extend_from_slice(&(entry.data.len() as u32).to_le_bytes());
-        head.extend_from_slice(&(entry.path.len() as u16).to_le_bytes());
-        head.extend_from_slice(&0u16.to_le_bytes()); // extra
-        out.extend_from_slice(&0x0403_4B50u32.to_le_bytes());
-        out.extend_from_slice(&head);
-        out.extend_from_slice(entry.path.as_bytes());
-        out.extend_from_slice(body);
-        central.extend_from_slice(&0x0201_4B50u32.to_le_bytes());
-        central.extend_from_slice(&20u16.to_le_bytes()); // version made by
-        central.extend_from_slice(&head);
-        central.extend_from_slice(&[0u8; 10]); // comment length, disk, attributes
-        central.extend_from_slice(&offset.to_le_bytes());
-        central.extend_from_slice(entry.path.as_bytes());
-    }
-    let start = out.len() as u32;
-    out.extend_from_slice(&central);
-    out.extend_from_slice(&0x0605_4B50u32.to_le_bytes());
-    out.extend_from_slice(&[0u8; 4]); // disk numbers
-    out.extend_from_slice(&(entries.len() as u16).to_le_bytes());
-    out.extend_from_slice(&(entries.len() as u16).to_le_bytes());
-    out.extend_from_slice(&(central.len() as u32).to_le_bytes());
-    out.extend_from_slice(&start.to_le_bytes());
-    out.extend_from_slice(&0u16.to_le_bytes());
-    out
+    mcsv_pack::pack_id(NS)
 }
 
 #[cfg(test)]

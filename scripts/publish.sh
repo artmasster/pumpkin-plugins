@@ -43,6 +43,8 @@ WASM_PLUGINS=(
   "imagemap|ImageMap|fs.read.data fs.write.data http.outbound network.dns|imagemap version;imagemap list all;imagemap new http://127.0.0.1/x.png;imagemap file nope.png;imagemap delete nope;tomap"
   "blocklog|BlockLog|fs.read.data fs.write.data|co version;co status;co lookup u:Nobody t:1h r:#global;coreprotect near;co purge t:1h;blocklog status"
   "customitems|CustomItems|fs.read.data fs.write.data network.tcp.bind|customitems version;customitems list 1;customitems give Nobody ruby 2;customitems pack;customitems pack send Nobody;customitems glyphs;customitems reload;citems info;craft"
+  "models|Models|fs.read.data fs.write.data network.tcp.bind|models version;models list;models info example;models info;models pack;models pack send Nobody;models near;models play 1 idle loop;models stat;models sweep;models reload;model list"
+  "mobs|Mobs|fs.read.data fs.write.data|mobs version;mobs list;mobs info;mobs info nobody;mobs spawn nobody;mobs near;mobs killall;mobs spawner list;mobs spawner remove nope;mobs stat;mobs reload;mob list"
 )
 
 cd "$ROOT"
@@ -63,7 +65,7 @@ done
 
 cap() { systemd-run --scope -q -p CPUQuota=800% nice -n 19 "$@"; }
 cap cargo test -q -p pregen --no-default-features
-cap cargo test -q -p mcsv-web "${PACKAGES[@]}"
+cap cargo test -q -p mcsv-web -p mcsv-pack "${PACKAGES[@]}"
 cap cargo build --release -q --target wasm32-wasip2 "${PACKAGES[@]}"
 RUST_MIN_STACK=33554432 cap cargo build --release -q -p pregen
 SO="$ROOT/target/release/libpregen.so"

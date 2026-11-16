@@ -2,7 +2,9 @@
 //! config files and command suggestions.
 #[cfg(feature = "http")]
 pub mod http;
+pub mod particles;
 pub mod sha1;
+pub mod tables;
 
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;

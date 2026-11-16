@@ -1,0 +1,11 @@
+[package]
+name = "mcsv-pack"
+description = "What every plugin that makes a resource pack needs: the files, the zip, the pack's id"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde_json.workspace = true
+miniz_oxide = "0.8"

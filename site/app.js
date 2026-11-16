@@ -4,13 +4,14 @@
 // The release the download buttons point at: files attached to the GitHub release of this tag.
 // `sizes` are the attached files' byte counts (written when the release is made).
 const RELEASE = {
-  version: '0.8.0', tag: 'v0.8.0', date: '2026-11-16', zip: 'pumpkin-plugins-0.8.0.zip',
+  version: '0.9.0', tag: 'v0.9.0', date: '2026-11-16', zip: 'pumpkin-plugins-0.9.0.zip',
   sizes: {
     'basics.wasm': 1731592, 'blocklog.wasm': 1368004, 'claims.wasm': 1118004, 'cleaner.wasm': 994192,
-    'customitems.wasm': 1257873, 'discordlink.wasm': 1085722, 'imagemap.wasm': 1285152, 'libpregen.so': 42314784,
-    'login.wasm': 1093361, 'monitor.wasm': 1020513, 'motd.wasm': 966363, 'perms.wasm': 1597257,
-    'placeholders.wasm': 980922, 'pumpkin-plugins-0.8.0.zip': 15417509, 'resourcepack.wasm': 1079127, 'scripts.wasm': 1864507,
-    'skins.wasm': 1111777, 'tablist.wasm': 1002532, 'worldmap.wasm': 1297868, 'worldtools.wasm': 1203088,
+    'customitems.wasm': 1260106, 'discordlink.wasm': 1085722, 'imagemap.wasm': 1285152, 'libpregen.so': 42314784,
+    'login.wasm': 1093361, 'mobs.wasm': 1147929, 'models.wasm': 1431580, 'monitor.wasm': 1020513,
+    'motd.wasm': 966363, 'perms.wasm': 1597257, 'placeholders.wasm': 980922, 'pumpkin-plugins-0.9.0.zip': 16241333,
+    'resourcepack.wasm': 1079127, 'scripts.wasm': 1865073, 'skins.wasm': 1111777, 'tablist.wasm': 1002532,
+    'worldmap.wasm': 1297868, 'worldtools.wasm': 1203088,
   },
 };
 const VERSION = RELEASE.version;
@@ -21,6 +22,7 @@ const fileOf = (p) => (p.native ? 'libpregen.so' : `${p.id}.wasm`);
 // Every release, newest first. Downloads exist for the newest one only (the GitHub repository
 // starts at 0.7.1); the older ones ran on MCSV's servers, and names before 0.6.0 were different.
 const HISTORY = [
+  { v: '0.9.0', d: '2026-11-16', th: 'เพิ่ม Models (โมเดลเคลื่อนไหวจากไฟล์ Blockbench) และ Mobs (mob กำหนดเอง มี skill ของดรอป และจุดเกิด) รวมเป็น 21 ตัว', en: 'Adds Models (animated models from Blockbench files) and Mobs (custom mobs with skills, drops and spawners). Twenty-one plugins.' },
   { v: '0.8.0', d: '2026-11-16', th: 'เพิ่ม CustomItems: ไอเท็มหน้าตาของเซิร์ฟเอง สร้างและส่ง resource pack ให้ มีหน้าต่างคราฟ รวมเป็น 19 ตัว', en: 'Adds CustomItems: items with their own look, a resource pack built and sent by the plugin, and a crafting window. Nineteen plugins.' },
   { v: '0.7.1', d: '2026-11-14', th: 'รุ่นแรกที่เปิดให้ดาวน์โหลดบน GitHub · หน้าเว็บแก้สิทธิ์ของ Perms ปิดไว้จนกว่าจะตั้ง editor-url เอง', en: 'First release with downloads on GitHub. The Perms web editor stays off until you set editor-url.' },
   { v: '0.7.0', d: '2026-11-14', th: 'เพิ่ม ResourcePack, Skins, Placeholders และ ImageMap รวมเป็น 18 ตัว', en: 'Adds ResourcePack, Skins, Placeholders and ImageMap: eighteen plugins.' },
@@ -104,6 +106,14 @@ const PLUGINS = [
     th: 'ไอเท็มหน้าตาของเซิร์ฟเอง: เขียนไม่กี่บรรทัดแล้ววางรูป ปลั๊กอินสร้างและส่ง resource pack ให้ มีหน้าต่างคราฟ',
     en: 'Items with their own look from a few lines and a picture: builds and sends the resource pack itself, with a crafting window.',
     cmds: ['/craft', '/customitems', '/customitems give <player> <id>', '/customitems reload', '/customitems pack'] },
+  { id: 'models', name: 'Models', rep: 'ModelEngine', aka: 'modelengine model engine meg bettermodel blockbench bbmodel animated', cat: 'look', extra: ['network.tcp.bind'],
+    th: 'โมเดลเคลื่อนไหวจากไฟล์ Blockbench: วางในโลก ใส่ให้ mob หรือสวมเอง ปลั๊กอินสร้างและส่ง resource pack ให้',
+    en: 'Animated models from Blockbench files: standing in the world, on a creature or worn, with the resource pack built and sent by the plugin.',
+    cmds: ['/models place <model>', '/models attach <model>', '/models wear <model>', '/models play . <animation>', '/models list'] },
+  { id: 'mobs', name: 'Mobs', rep: 'MythicMobs', aka: 'mythicmobs mythic mobs boss custom mob spawner elitemobs', cat: 'world',
+    th: 'mob กำหนดเองจากไฟล์ตั้งค่า: ค่าพลัง พฤติกรรม skill ของดรอป boss bar และจุดเกิด ใส่โมเดลของ Models ได้',
+    en: 'Custom mobs from config: stats, behaviour, skills, drops, boss bars and spawners. They wear a model when Models is installed.',
+    cmds: ['/mobs spawn <mob>', '/mobs spawner add <name> <mob>', '/mobs list', '/mobs near', '/mobs reload'] },
   { id: 'monitor', name: 'Monitor', rep: 'spark', aka: 'spark tps lag profiler timings', cat: 'ops',
     th: 'ดูสุขภาพเซิร์ฟ: TPS เวลาต่อ tick ping และจำนวน entity',
     en: 'Server health: TPS, time per tick, ping and entity counts.',
@@ -423,7 +433,7 @@ function showWhatsNew() {
 
 /* ---------- language ---------- */
 const TITLE_EN = document.title;
-const TITLE_TH = 'Pumpkin Plugins: เรามี 19 ปลั๊กอินสำหรับ PumpkinMC เขียนด้วย Rust | MCSV';
+const TITLE_TH = 'Pumpkin Plugins: เรามี 21 ปลั๊กอินสำหรับ PumpkinMC เขียนด้วย Rust | MCSV';
 function paintText() {
   document.documentElement.lang = lang;
   document.querySelectorAll('[data-i18n]').forEach((node) => { node.innerHTML = t(node.dataset.i18n); });

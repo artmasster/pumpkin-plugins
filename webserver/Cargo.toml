@@ -1,0 +1,12 @@
+[package]
+name = "mcsv-web"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "A very small HTTP/1.1 server a Pumpkin WASM plugin can run from the server tick"
+
+# Plain Rust, no dependencies: used by WorldMap (the map page) and CustomItems (the resource
+# pack download). The tests run it natively against real sockets on loopback.
+[lib]
+path = "src/lib.rs"

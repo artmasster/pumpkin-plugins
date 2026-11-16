@@ -13,6 +13,10 @@
 //!   (block coordinates accept `~` and `~N`, relative to the block the bot stands in)
 //!   click <slot> [button] [mode]  (in the window the server opened)   closewin
 //!   useitem [yaw] [pitch]  (right click into the air with the held item; pitch 90 = down)
+//!   interact <entity id | type=N>   (right click an entity; ids come from the `ENTITY <id>
+//!   type=<n>` lines, `type=N` means the newest entity of that type)
+//! `MCBOT_FIND=a,b` prints `FOUND <text> in <packet>` for every play packet that carries one of
+//! these strings: enough to see an item model or a font reach the client without reading items.
 //! Also printed: `BLOCK x y z <state id>` for single block updates, `WINDOW id type title`,
 //! `CONTENT window state slots` when a window's items arrive, `WINDOWCLOSED`.
 use std::io::{Read, Write};
@@ -257,6 +261,20 @@ fn action(status: i32, at: (i32, i32, i32), seq: i32) -> Vec<u8> {
     b
 }
 
+/// The play packets a test looks for by name; the rest are shown by number.
+fn packet_name(id: i32) -> String {
+    let known = [
+        (cb::play::CONTAINER_SET_SLOT.0, "set_slot"),
+        (cb::play::CONTAINER_SET_CONTENT.0, "set_content"),
+        (cb::play::SET_PLAYER_INVENTORY.0, "set_player_inventory"),
+        (cb::play::SET_ENTITY_DATA.0, "entity_data"),
+        (cb::play::OPEN_SCREEN.0, "open_screen"),
+        (cb::play::SOUND.0, "sound"),
+        (cb::play::SYSTEM_CHAT.0, "chat"),
+    ];
+    known.iter().find(|(n, _)| *n == id).map_or_else(|| format!("packet_{id}"), |(_, name)| (*name).to_owned())
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     if args.len() < 4 {
@@ -349,11 +367,15 @@ fn main() {
     let pos = Arc::new(Mutex::new(None::<Pos>));
     // The window that is open (0 = the player's own inventory) and its latest state id
     let window = Arc::new(Mutex::new((0i32, 0i32)));
+    // The newest entity of each type the server showed us (type number -> entity id)
+    let seen = Arc::new(Mutex::new(std::collections::HashMap::<i32, i32>::new()));
     let (done_tx, done_rx) = mpsc::channel::<()>();
     {
         let conn = conn.clone();
         let pos = pos.clone();
         let window = window.clone();
+        let seen = seen.clone();
+        let find: Vec<String> = std::env::var("MCBOT_FIND").unwrap_or_default().split(',').filter(|s| !s.is_empty()).map(str::to_owned).collect();
         std::thread::spawn(move || {
             let mut rconn = Conn { stream: reader, threshold };
             let mut loaded = false;
@@ -364,7 +386,20 @@ fn main() {
                     return;
                 };
                 let mut r = Rd(&body);
-                if id == cb::play::KEEP_ALIVE.0 {
+                // MCBOT_FIND=a,b: say which packets carry these strings (an item's model, a font)
+                for mark in &find {
+                    if body.windows(mark.len()).any(|w| w == mark.as_bytes()) {
+                        println!("FOUND {mark} in {} bytes={}", packet_name(id), body.len());
+                    }
+                }
+                if id == cb::play::ADD_ENTITY.0 {
+                    // entity id, uuid, type
+                    let eid = r.varint().unwrap_or(-1);
+                    let _uuid = r.take(16);
+                    let kind = r.varint().unwrap_or(-1);
+                    seen.lock().unwrap().insert(kind, eid);
+                    println!("ENTITY {eid} type={kind}");
+                } else if id == cb::play::KEEP_ALIVE.0 {
                     let _ = conn.lock().unwrap().send(sb::play::KEEP_ALIVE.0, &body);
                 } else if id == cb::play::PING.0 {
                     let _ = conn.lock().unwrap().send(sb::play::PONG.0, &body);
@@ -647,6 +682,24 @@ fn main() {
                     b.push(0); // nothing predicted on the cursor
                     let _ = conn.lock().unwrap().send(sb::play::CONTAINER_CLICK.0, &b);
                     println!("CLICKED {wid} {slot}");
+                }
+            }
+            "interact" => {
+                // interact <entity id | type=N>: right click an entity (26.1+ layout: id, hand, where,
+                // sneaking). `type=N` picks the newest entity of that type the server showed us.
+                let target = match rest.trim().strip_prefix("type=") {
+                    Some(kind) => kind.parse::<i32>().ok().and_then(|k| seen.lock().unwrap().get(&k).copied()),
+                    None => rest.trim().parse::<i32>().ok(),
+                };
+                if let Some(eid) = target {
+                    let mut b = Vec::new();
+                    put_varint(&mut b, eid);
+                    put_varint(&mut b, 0);
+                    b.push(0); // a zero vector in the short form
+                    b.push(0);
+                    let _ = conn.lock().unwrap().send(sb::play::INTERACT.0, &b);
+                    let _ = conn.lock().unwrap().send(sb::play::SWING.0, &[0]);
+                    println!("INTERACTED {eid}");
                 }
             }
             "closewin" => {

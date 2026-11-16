@@ -1,9 +1,9 @@
 [workspace]
 resolver = "3"
-members = ["common", "pregen", "basics", "tablist", "worldtools", "blocklog", "perms", "scripts-plugin", "login", "monitor", "discordlink", "worldmap", "claims", "cleaner", "motd", "placeholders", "skins", "resourcepack", "imagemap", "tools/mcbot"]
+members = ["common", "pregen", "basics", "tablist", "worldtools", "blocklog", "perms", "scripts-plugin", "login", "monitor", "discordlink", "worldmap", "claims", "cleaner", "motd", "placeholders", "skins", "resourcepack", "imagemap", "customitems", "webserver", "tools/mcbot"]
 
 [workspace.package]
-version = "0.7.1"
+version = "0.8.0"
 edition = "2024"
 license = "MIT"
 publish = false
@@ -19,6 +19,7 @@ pumpkin-util = { git = "https://github.com/Pumpkin-MC/Pumpkin", tag = "0.2.2+26.
 pumpkin-api-macros = { git = "https://github.com/Pumpkin-MC/Pumpkin", tag = "0.2.2+26.3-26.60" }
 tokio = "1"
 mcsv-common = { path = "common" }
+mcsv-web = { path = "webserver" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 toml = { version = "0.8", default-features = false, features = ["parse", "display"] }

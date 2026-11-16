@@ -20,6 +20,8 @@ serde_json.workspace = true
 toml.workspace = true
 # Raw deflate for tile bands (pure Rust; the same crate std uses)
 miniz_oxide = "0.8"
+# The HTTP server of the map page
+mcsv-web.workspace = true
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 pumpkin-plugin-api.workspace = true

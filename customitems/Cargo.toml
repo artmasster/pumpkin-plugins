@@ -1,0 +1,24 @@
+[package]
+name = "customitems"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Custom items with their own look for Pumpkin by MCSV (Oraxen, ItemsAdder and Nexo style)"
+
+# WASM component plugin: build with `cargo build --release --target wasm32-wasip2 -p customitems`.
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+toml.workspace = true
+# Deflate for the text files of the resource pack (pure Rust; the same crate std uses)
+miniz_oxide = "0.8"
+# Serves the resource pack to players when the owner has nowhere else to host it
+mcsv-web.workspace = true
+
+[target.'cfg(target_family = "wasm")'.dependencies]
+pumpkin-plugin-api.workspace = true
+mcsv-common.workspace = true

@@ -102,11 +102,14 @@ struct Run {
     fade: f32,
     /// Started by the plugin (idle, walk), not asked for.
     auto: bool,
+    /// Which asked-for start on this model it is: a watcher sees a start over by it.
+    nth: u64,
 }
 
 enum Anchor {
     Placed { world: String, pos: (f64, f64, f64) },
-    Riding { base: Entity, base_id: i32, lift: f32, hid: bool, lived: i32, stale: u8 },
+    /// `up`: how far above the creature's feet the model's own feet are.
+    Riding { base: Entity, base_id: i32, lift: f32, up: f32, hid: bool, lived: i32, stale: u8 },
 }
 
 struct Instance {
@@ -141,6 +144,11 @@ struct Instance {
     far: bool,
     /// What the last pose was made from, as one number.
     seen: Option<u64>,
+    /// What a watcher was last told about it, as one number, and when that last changed.
+    told: u64,
+    rev: u64,
+    /// How many animations were asked for so far.
+    plays: u64,
 }
 
 /// A model another plugin asked to put on a creature, until the next tick finds the creature.
@@ -187,7 +195,27 @@ struct State {
     scratch: Vec<Mat>,
     turn: usize,
     swept: u64,
+    watch: Watch,
 }
+
+/// What another plugin that mirrors the models somewhere else (the Bedrock plugin does, for
+/// players the bones cannot be shown to) is told: it asks every few ticks for what changed.
+#[derive(Default)]
+struct Watch {
+    /// Somebody asked not long ago: the tick until which changes are noted.
+    until: u64,
+    /// Counts up with every change.
+    rev: u64,
+    /// Models that left the world, with the count at that moment.
+    gone: Vec<(u64, u32)>,
+    /// Older leavings than this were forgotten: who asks from before it is told everything.
+    floor: u64,
+    /// Counts the times the files were read: the models may be other ones after that.
+    loaded: u64,
+}
+
+/// How many leavings are remembered for a watcher that asks late.
+const WATCH_GONE: usize = 4096;
 
 static STATE: Mutex<Option<State>> = Mutex::new(None);
 
@@ -432,7 +460,33 @@ impl Instance {
             near: false,
             far: false,
             seen: None,
+            told: 0,
+            rev: 0,
+            plays: 0,
         }
+    }
+
+    /// Everything a watcher is told about this model, as one number: when it changes the
+    /// watcher hears of the model again.
+    fn telling(&self) -> u64 {
+        let mut h = 0xcbf2_9ce4_8422_2325u64;
+        let mut add = |n: u64| h = (h ^ n).wrapping_mul(0x0000_0100_0000_01b3);
+        add(u64::from(self.scale.to_bits()));
+        if let Anchor::Placed { pos, .. } = &self.anchor {
+            add(pos.0.to_bits());
+            add(pos.1.to_bits());
+            add(pos.2.to_bits());
+            add(u64::from(self.yaw.to_bits()));
+        }
+        for byte in self.tag_text.bytes() {
+            add(u64::from(byte));
+        }
+        add(u64::from(self.tint.is_some()) + 2 * u64::from(self.die_at.is_some()));
+        for run in self.runs.iter().filter(|r| r.target > 0.0) {
+            add(run.animation as u64 * 4 + u64::from(run.auto) + 1);
+            add(run.nth);
+        }
+        h | 1
     }
 
     fn shown(&self) -> bool {
@@ -477,6 +531,10 @@ impl Instance {
     fn play(&mut self, animation: usize, mode: Option<Loop>, speed: f32, blend: u32, auto: bool) {
         let Some(a) = self.data.model.animations.get(animation) else { return };
         let fade = if blend == 0 { 1.0 } else { 1.0 / blend as f32 };
+        if !auto {
+            self.plays += 1;
+        }
+        let nth = if auto { 0 } else { self.plays };
         if let Some(run) = self.runs.iter_mut().find(|r| r.animation == animation) {
             run.time = if auto { run.time } else { 0.0 };
             run.target = 1.0;
@@ -484,9 +542,10 @@ impl Instance {
             run.speed = speed;
             run.auto = auto;
             run.mode = mode.unwrap_or(a.looping);
+            run.nth = nth;
             return;
         }
-        self.runs.push(Run { animation, time: 0.0, speed, mode: mode.unwrap_or(a.looping), weight: if blend == 0 { 1.0 } else { 0.0 }, target: 1.0, fade, auto });
+        self.runs.push(Run { animation, time: 0.0, speed, mode: mode.unwrap_or(a.looping), weight: if blend == 0 { 1.0 } else { 0.0 }, target: 1.0, fade, auto, nth });
     }
 
     fn stop(&mut self, animation: Option<usize>, blend: u32) {
@@ -757,7 +816,9 @@ fn add_riding(st: &mut State, data: Arc<Data>, base: Entity, owner: &str, id: Op
     });
     let base_id = base.get_id() as i32;
     // Riders sit at the top of a creature: the model's feet go back down to its feet
-    let lift = data.set.ride_lift.unwrap_or(-base.get_height()) + data.set.lift;
+    let height = base.get_height();
+    let lift = data.set.ride_lift.unwrap_or(-height) + data.set.lift;
+    let up = lift + height;
     let hid = data.set.hide_base && !base.is_invisible();
     if hid {
         base.set_invisible(true);
@@ -765,7 +826,7 @@ fn add_riding(st: &mut State, data: Arc<Data>, base: Entity, owner: &str, id: Op
     let yaw = base.get_yaw();
     let pos = base.get_position();
     let lived = base.get_ticks_lived();
-    let mut inst = Instance::new(id, data, Anchor::Riding { base, base_id, lift, hid, lived, stale: 0 }, yaw, owner);
+    let mut inst = Instance::new(id, data, Anchor::Riding { base, base_id, lift, up, hid, lived, stale: 0 }, yaw, owner);
     inst.last_pos = pos;
     if let Some(spawn) = inst.data.spawn {
         inst.play(spawn, Some(Loop::Once), 1.0, 0, false);
@@ -778,6 +839,15 @@ fn add_riding(st: &mut State, data: Arc<Data>, base: Entity, owner: &str, id: Op
 fn remove_instance(st: &mut State, id: u32) -> bool {
     let Some(at) = st.instances.iter().position(|i| i.id == id) else { return false };
     let mut inst = st.instances.swap_remove(at);
+    if st.tick < st.watch.until {
+        st.watch.rev += 1;
+        st.watch.gone.push((st.watch.rev, id));
+        if st.watch.gone.len() > WATCH_GONE {
+            let cut = st.watch.gone.len() - WATCH_GONE / 2;
+            st.watch.floor = st.watch.gone[cut - 1].0;
+            st.watch.gone.drain(..cut);
+        }
+    }
     inst.hide(&mut st.boxes);
     if let Anchor::Riding { base, base_id, hid, .. } = &inst.anchor {
         st.bases.remove(base_id);
@@ -821,6 +891,7 @@ fn apply(st: &mut State, loaded: Loaded) {
         }
     }
     st.boxes.clear();
+    st.watch.loaded += 1;
     st.cfg = loaded.cfg;
     st.models = loaded.models;
     st.notes = loaded.notes;
@@ -1036,6 +1107,18 @@ fn on_tick(server: Server) {
             inst.due = tick + u64::from(inst.interval.max(1));
         }
         st.scratch = scratch;
+        if tick < st.watch.until {
+            let mut rev = st.watch.rev;
+            for inst in &mut st.instances {
+                let now = inst.telling();
+                if now != inst.told {
+                    inst.told = now;
+                    rev += 1;
+                    inst.rev = rev;
+                }
+            }
+            st.watch.rev = rev;
+        }
         for id in done {
             let owner = st.instances.iter().find(|i| i.id == id).map(|i| i.owner.clone()).unwrap_or_default();
             remove_instance(st, id);
@@ -1700,8 +1783,55 @@ fn ipc(st: &mut State, sender: &str, v: &serde_json::Value) -> Result<serde_json
             let inst = st.instances.iter().find(|i| i.id == id).ok_or("gone")?;
             ok(serde_json::json!({ "model": inst.data.model.name, "shown": inst.shown(), "playing": inst.runs.iter().filter(|r| r.target > 0.0).map(|r| inst.data.model.animations[r.animation].name.clone()).collect::<Vec<_>>() }))
         }
+        "watch" => Ok(watch(st, number("since").map_or(0, |n| n as u64), number("loaded").map_or(0, |n| n as u64))),
         other => Err(format!("unknown kind {other}")),
     }
+}
+
+/// What changed since the asker's last count (`since`), or everything when it asks for the
+/// first time, from too long ago, or from before the files were last read.
+fn watch(st: &mut State, since: u64, loaded: u64) -> serde_json::Value {
+    let fresh = st.tick >= st.watch.until;
+    st.watch.until = st.tick + 200;
+    if fresh {
+        // Nothing was noted while nobody asked: everything counts as changed now
+        st.watch.gone.clear();
+        st.watch.rev += 1;
+        st.watch.floor = st.watch.rev;
+        for inst in &mut st.instances {
+            inst.told = inst.telling();
+            inst.rev = st.watch.rev;
+        }
+    }
+    let full = fresh || since == 0 || since < st.watch.floor || since > st.watch.rev || loaded != st.watch.loaded;
+    let models: Vec<serde_json::Value> = st
+        .instances
+        .iter()
+        .filter(|i| full || i.rev > since)
+        .map(|i| {
+            let (base, world, at, up) = match &i.anchor {
+                Anchor::Placed { world, pos } => (None, Some(world.as_str()), Some(*pos), i.data.set.lift),
+                Anchor::Riding { base_id, up, .. } => (Some(*base_id), None, None, *up),
+            };
+            serde_json::json!({
+                "id": i.id,
+                "model": i.data.model.name,
+                "base": base,
+                "world": world,
+                "at": at.map(|p| [p.0, p.1, p.2]),
+                "yaw": i.yaw,
+                "up": up,
+                "scale": i.scale,
+                "name": i.tag_text,
+                // Blocks above the model's feet at its own size
+                "tag": i.data.tag.map(|b| i.data.model.bones[b].pivot.y / rig::UNITS),
+                "tint": i.tint.is_some(),
+                "playing": i.runs.iter().filter(|r| r.target > 0.0).map(|r| serde_json::json!([i.data.model.animations[r.animation].name, r.auto, r.nth])).collect::<Vec<_>>(),
+            })
+        })
+        .collect();
+    let gone: Vec<u32> = if full { Vec::new() } else { st.watch.gone.iter().filter(|(rev, _)| *rev > since).map(|(_, id)| *id).collect() };
+    serde_json::json!({ "ok": true, "rev": st.watch.rev, "loaded": st.watch.loaded, "full": full, "models": models, "gone": gone })
 }
 
 // ---- the plugin ------------------------------------------------------------------
@@ -1748,6 +1878,7 @@ impl Plugin for Models {
             scratch: Vec::new(),
             turn: 0,
             swept: 0,
+            watch: Watch::default(),
         };
         apply(&mut st, loaded);
         c::log_info(&format!(

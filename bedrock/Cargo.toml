@@ -1,0 +1,53 @@
+[package]
+name = "bedrock"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+authors = ["MCSV"]
+description = "Shows the models of the Models plugin to Bedrock players on Pumpkin by MCSV"
+
+# Native Pumpkin plugin (.so): a WASM plugin cannot send the packets a Bedrock client needs for
+# an entity of its own (AddActor, AvailableActorIdentifiers, AnimateEntity), so Bedrock links
+# pumpkin-core and must be rebuilt for every Pumpkin release (plugin API check).
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = ["plugin"]
+plugin = [
+    "dep:pumpkin",
+    "dep:pumpkin-util",
+    "dep:pumpkin-protocol",
+    "dep:pumpkin-data",
+    "dep:pumpkin-nbt",
+    "dep:pumpkin-api-macros",
+    "dep:tokio",
+    "dep:tracing",
+    "dep:tracing-subscriber",
+    "dep:time",
+    "dep:libc",
+]
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+toml.workspace = true
+# Reads the same Blockbench files the same way: the bones and the animation names match
+models = { path = "../models" }
+# The items of the CustomItems plugin, read the way it reads them
+customitems = { path = "../customitems" }
+mcsv-pack.workspace = true
+# Several pictures of one model become one picture
+png = "0.17"
+pumpkin = { workspace = true, optional = true }
+pumpkin-util = { workspace = true, optional = true }
+pumpkin-protocol = { workspace = true, optional = true }
+pumpkin-data = { workspace = true, optional = true }
+pumpkin-nbt = { workspace = true, optional = true }
+pumpkin-api-macros = { workspace = true, optional = true }
+tokio = { workspace = true, optional = true }
+tracing = { workspace = true, optional = true }
+tracing-subscriber = { workspace = true, optional = true }
+time = { workspace = true, optional = true }
+libc = { workspace = true, optional = true }

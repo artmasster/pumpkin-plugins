@@ -285,6 +285,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "bedrock"
+version = "0.9.0"
+dependencies = [
+ "customitems",
+ "libc",
+ "mcsv-pack",
+ "models",
+ "png 0.17.16",
+ "pumpkin-api-macros",
+ "pumpkin-core",
+ "pumpkin-data",
+ "pumpkin-nbt",
+ "pumpkin-protocol",
+ "pumpkin-util",
+ "serde",
+ "serde_json",
+ "time",
+ "tokio",
+ "toml 0.8.23",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "bit-vec"
 version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

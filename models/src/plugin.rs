@@ -19,7 +19,8 @@ use mcsv_web::{Request, Response, Web};
 use pumpkin_plugin_api::command::{ArgumentType, Command, CommandError, CommandNode, CommandSender, ConsumedArgs, StringType};
 use pumpkin_plugin_api::commands::CommandHandler;
 use pumpkin_plugin_api::data_components::DataComponent;
-use pumpkin_plugin_api::events::{EntityDamageEvent, EntityDeathEvent, EventHandler, EventPriority, FromIntoEvent, PlayerInteractEntityEvent, PlayerLeaveEvent, PlayerResourcePackStatusEvent};
+use pumpkin_plugin_api::events::{EntityDamageEvent, EntityDeathEvent, EventHandler, EventPriority, FromIntoEvent, PlayerChangeWorldEvent, PlayerInteractEntityEvent, PlayerLeaveEvent, PlayerResourcePackStatusEvent, PlayerRespawnEvent};
+use pumpkin_plugin_api::java_packets::{CRemoveEntities, CSetEntityLink, CSetEntityMetadata, CSetPassengers, CSpawnEntity, ClientboundPacket};
 use pumpkin_plugin_api::permission::{Permission, PermissionDefault, PermissionLevel};
 use pumpkin_plugin_api::permissions::{FS_READ_DATA, FS_WRITE_DATA, NETWORK_TCP_BIND};
 use pumpkin_plugin_api::player::Player;
@@ -30,7 +31,7 @@ use pumpkin_plugin_api::wit::pumpkin::plugin::display::{BillboardMode, DisplayEn
 use pumpkin_plugin_api::wit::pumpkin::plugin::player::JavaResourcePack;
 use pumpkin_plugin_api::wit::pumpkin::plugin::server::CommandSender as ServerSender;
 use pumpkin_plugin_api::wit::pumpkin::plugin::world::{Entity, World};
-use pumpkin_plugin_api::{Context, EntityDisplayExt, EntityType, ItemDisplayMode, ItemStack, Plugin, PluginMetadata, Server, register_plugin};
+use pumpkin_plugin_api::{Context, EntityDisplayExt, EntityType, ItemDisplayMode, ItemStack, JavaMinecraftVersion, JavaPlayer, Plugin, PluginMetadata, Server, register_plugin};
 
 use crate::bbmodel::{self, Loop};
 use crate::defs::{self, Config, NS, Note, Placed, Settings};
@@ -51,6 +52,15 @@ const MAX_FILE: u64 = 32 * 1024 * 1024;
 const PART: &str = "part";
 /// Models in the world at once, however they got there.
 const MAX_MODELS: usize = 2000;
+/// A player standing is this high: what rides one sits on top of it.
+const PLAYER_HEIGHT: f32 = 1.8;
+/// The number a lead's creature has in the games told of it (plus the model's number): far
+/// above any the server gives its own entities.
+const LEASH_BASE: i32 = 0x5A00_0000;
+/// A silverfish, in the game this is built for: the smallest creature, so the lead ends where
+/// the model is. Only players on that game are told (see `Leash`).
+const LEASH_CREATURE: i32 = 117;
+const LEASH_GAME: JavaMinecraftVersion = JavaMinecraftVersion::V263;
 
 struct Built {
     bytes: Arc<Vec<u8>>,
@@ -79,6 +89,41 @@ struct Data {
     spawn: Option<usize>,
     head: bool,
     tag: Option<usize>,
+    /// How the item displays draw their item: `Fixed` for a model's bones.
+    mode: ItemDisplayMode,
+    /// Made for one item another plugin named (`attach` with `item`), not read from a file.
+    from_item: bool,
+    /// The item model of the whole model worn in a helmet slot, when it can be one.
+    worn: Option<String>,
+}
+
+/// A model of one item for `attach` or `spawn` with `item`: made when asked, never from a
+/// file. On a creature, measured on a player: the neck is 24 units up, the middle of the head
+/// 28, the middle of the back 18. Standing by itself: the item's middle is where it stands.
+/// `offset` is in blocks (+Z is behind).
+fn item_data(item: &str, on_creature: bool, head: bool, offset: (f32, f32, f32), size: f32, turn: f32, mode: ItemDisplayMode) -> Data {
+    use crate::math::Vec3;
+    let middle = match (on_creature, head) {
+        (true, true) => Vec3::new(0.0, 28.0, 0.0),
+        (true, false) => Vec3::new(0.0, 18.0, 0.0),
+        (false, _) => Vec3::ZERO,
+    };
+    let at = middle.add(Vec3::new(offset.0, offset.1, offset.2).scale(rig::UNITS));
+    let model = rig::single(&format!("item:{item}"), head, Vec3::new(0.0, 24.0, 0.0), at, size, turn);
+    let set = Settings { hide_base: false, ..Settings::default() }.cleaned();
+    Data { model, set, items: vec![Some(item.to_owned())], idle: None, walk: None, hurt: None, death: None, spawn: None, head, tag: None, mode, from_item: true, worn: None }
+}
+
+fn display_mode(name: &str) -> Option<ItemDisplayMode> {
+    Some(match name {
+        "head" => ItemDisplayMode::Head,
+        "fixed" => ItemDisplayMode::Fixed,
+        "none" => ItemDisplayMode::None,
+        "ground" => ItemDisplayMode::Ground,
+        "gui" => ItemDisplayMode::Gui,
+        "hand" => ItemDisplayMode::ThirdpersonRighthand,
+        _ => return None,
+    })
 }
 
 struct Part {
@@ -109,7 +154,60 @@ struct Run {
 enum Anchor {
     Placed { world: String, pos: (f64, f64, f64) },
     /// `up`: how far above the creature's feet the model's own feet are.
-    Riding { base: Entity, base_id: i32, lift: f32, up: f32, hid: bool, lived: i32, stale: u8 },
+    Riding { base: Entity, base_id: i32, player: bool, lift: f32, up: f32, hid: bool, lived: i32, stale: u8 },
+}
+
+/// A lead from a player's hand to a model that stands by itself (a balloon). The game draws a
+/// lead only to a creature, so every player who sees the model is told of one that is in their
+/// game alone: invisible, riding the model's first bone, held by the player. The server never
+/// has it, so nothing in the world can hit, push or untie it.
+///
+/// The game drops a creature's lead whenever the creature starts to ride: whatever tells it
+/// what the creature rides tells it who holds the lead right after.
+struct Leash {
+    /// The player who holds it: UUID as 32 hex digits.
+    holder: String,
+    /// The creature's number in the games told of it.
+    fake: i32,
+    /// Who was told, by lowercase name.
+    told: HashMap<String, Told>,
+}
+
+struct Told {
+    java: JavaPlayer,
+    /// The bone entity the creature rides there, and the holder's entity.
+    ride: i32,
+    holder: i32,
+    /// The player's game lost it (a respawn, another world): told all again from this tick.
+    again: Option<u64>,
+}
+
+impl Leash {
+    fn packets(&self, at: (f64, f64, f64), ride: i32, holder: i32) -> [ClientboundPacket; 4] {
+        let fake = self.fake;
+        [
+            ClientboundPacket::CSpawnEntity(CSpawnEntity { entity_id: fake, entity_uuid: Uuid { high: 0x4d43_5356_4c45_4153, low: fake as u64 }, r_type: LEASH_CREATURE, position: at, velocity: "[0.0,0.0,0.0]".into(), pitch: 0, yaw: 0, head_yaw: 0, data: 0 }),
+            // Entity flags (index 0, a byte): invisible
+            ClientboundPacket::CSetEntityMetadata(CSetEntityMetadata { entity_id: fake, metadata: vec![0, 0, 0x20, 0xff] }),
+            ClientboundPacket::CSetPassengers(CSetPassengers { entity_id: ride, passengers: vec![fake] }),
+            ClientboundPacket::CSetEntityLink(CSetEntityLink { attached_entity_id: fake, holding_entity_id: holder, leash: true }),
+        ]
+    }
+
+    /// Take the creature out of the game of everyone who was told.
+    fn drop_all(&mut self) {
+        let gone = ClientboundPacket::CRemoveEntities(CRemoveEntities { entity_ids: vec![self.fake] });
+        for (_, told) in self.told.drain() {
+            told.java.send_packet(&gone);
+        }
+    }
+}
+
+/// A player's body as the game turns it (see `rig::body_turn`), worked out once a tick.
+struct Body {
+    yaw: f32,
+    at: (f64, f64, f64),
+    tick: u64,
 }
 
 struct Instance {
@@ -138,6 +236,9 @@ struct Instance {
     commands: Vec<String>,
     /// From `placed.json`: it comes back after a restart.
     kept: bool,
+    /// Rides next to the creature's own model (see `add_riding`).
+    extra: bool,
+    leash: Option<Leash>,
     die_at: Option<u64>,
     /// A player is close enough to see it.
     near: bool,
@@ -161,6 +262,10 @@ struct Pending {
     name: String,
     /// What was asked of this model in the meantime.
     then: Vec<serde_json::Value>,
+    /// Goes next to the creature's other models instead of taking the place of its model.
+    extra: bool,
+    /// Hide the creature, whatever the model's settings say.
+    hide: Option<bool>,
 }
 
 #[derive(Default)]
@@ -189,6 +294,8 @@ struct State {
     boxes: HashMap<i32, u32>,
     /// Which model sits on a creature (entity id of the creature).
     bases: HashMap<i32, u32>,
+    /// The bodies of players something rides, by entity id.
+    bodies: HashMap<i32, Body>,
     tick: u64,
     sent: u64,
     stat: Stat,
@@ -295,6 +402,7 @@ fn load() -> Loaded {
         .cleaned();
         let items = model.bones.iter().map(|b| (!b.cubes.is_empty()).then(|| pack::item_id(&model.name, &b.name))).collect();
         let named = |name: &str| model.animation(&rig::plain_name(name));
+        let worn = pack::worn_model(&model).map(|_| pack::worn_id(&model.name));
         models.push(Arc::new(Data {
             idle: named(&set.idle),
             walk: named(&set.walk),
@@ -306,6 +414,9 @@ fn load() -> Loaded {
             items,
             set,
             model,
+            mode: ItemDisplayMode::Fixed,
+            from_item: false,
+            worn,
         }));
     }
 
@@ -456,6 +567,8 @@ impl Instance {
             animation: None,
             commands: Vec::new(),
             kept: false,
+            extra: false,
+            leash: None,
             die_at: None,
             near: false,
             far: false,
@@ -500,8 +613,19 @@ impl Instance {
         }
     }
 
+    fn on_player(&self) -> bool {
+        matches!(self.anchor, Anchor::Riding { player: true, .. })
+    }
+
     fn root(&self) -> Mat {
-        rig::root(self.yaw, self.scale, self.lift())
+        // A hat or a backpack is drawn around a model of a player: as small as the game draws one
+        let grow = if self.extra && self.on_player() { rig::PLAYER_SIZE } else { 1.0 };
+        rig::root(self.yaw, self.scale * grow, self.lift())
+    }
+
+    /// Follows a player: told every tick, so it keeps up with every turn.
+    fn quick(&self) -> bool {
+        self.leash.is_some() || self.on_player()
     }
 
     /// Where it is, and in which world.
@@ -515,6 +639,9 @@ impl Instance {
     /// Take every entity of this model out of the world.
     fn hide(&mut self, boxes: &mut HashMap<i32, u32>) {
         self.seen = None;
+        if let Some(leash) = self.leash.as_mut() {
+            leash.drop_all();
+        }
         for part in self.parts.drain(..) {
             part.entity.remove();
         }
@@ -626,7 +753,7 @@ fn show(inst: &mut Instance, server: &Server, interval: u32, boxes: &mut HashMap
         }
         mark(&entity);
         item.set_item(Some(bone_item(data.items[bone].as_deref().unwrap_or_default(), inst.tint)));
-        item.set_item_display_mode(ItemDisplayMode::Fixed);
+        item.set_item_display_mode(data.mode);
         let display = item.get_display();
         let shown = rig::shown(&data.model.tail[bone], &scratch[bone], &lead);
         display.set_transformation(transformation(&shown));
@@ -793,10 +920,12 @@ fn settle_pending(st: &mut State, server: &Server, after: &mut Vec<After>) {
             after.push(After::Tell { plugin: p.owner, message: serde_json::json!({ "kind": "model_gone", "id": p.id, "why": "no such entity" }) });
             continue;
         };
-        if let Some(old) = st.bases.get(&(p.entity as i32)).copied() {
+        if !p.extra
+            && let Some(old) = st.bases.get(&(p.entity as i32)).copied()
+        {
             remove_instance(st, old);
         }
-        add_riding(st, p.data, base, &p.owner, Some(p.id));
+        add_riding(st, p.data, base, &p.owner, Some(p.id), p.extra, p.hide);
         if let Some(inst) = st.instances.iter_mut().find(|i| i.id == p.id) {
             if let Some(scale) = p.scale {
                 inst.scale = scale;
@@ -809,29 +938,36 @@ fn settle_pending(st: &mut State, server: &Server, after: &mut Vec<After>) {
     }
 }
 
-fn add_riding(st: &mut State, data: Arc<Data>, base: Entity, owner: &str, id: Option<u32>) -> u32 {
+/// `extra`: the model goes next to the creature's own model (a hat on a player) instead of
+/// being its model; hurt, death and `detach` are about the creature's own model.
+fn add_riding(st: &mut State, data: Arc<Data>, base: Entity, owner: &str, id: Option<u32>, extra: bool, hide: Option<bool>) -> u32 {
     let id = id.unwrap_or_else(|| {
         st.next_id += 1;
         st.next_id - 1
     });
     let base_id = base.get_id() as i32;
-    // Riders sit at the top of a creature: the model's feet go back down to its feet
-    let height = base.get_height();
+    // Riders sit at the top of a creature: the model's feet go back down to its feet. A player
+    // may be sneaking just now; what rides goes down and up with them by itself.
+    let player = base.get_type() == EntityType::Player;
+    let height = if player { PLAYER_HEIGHT } else { base.get_height() };
     let lift = data.set.ride_lift.unwrap_or(-height) + data.set.lift;
     let up = lift + height;
-    let hid = data.set.hide_base && !base.is_invisible();
+    let hid = hide.unwrap_or(data.set.hide_base && !extra) && !base.is_invisible();
     if hid {
         base.set_invisible(true);
     }
     let yaw = base.get_yaw();
     let pos = base.get_position();
     let lived = base.get_ticks_lived();
-    let mut inst = Instance::new(id, data, Anchor::Riding { base, base_id, lift, up, hid, lived, stale: 0 }, yaw, owner);
+    let mut inst = Instance::new(id, data, Anchor::Riding { base, base_id, player, lift, up, hid, lived, stale: 0 }, yaw, owner);
     inst.last_pos = pos;
     if let Some(spawn) = inst.data.spawn {
         inst.play(spawn, Some(Loop::Once), 1.0, 0, false);
     }
-    st.bases.insert(base_id, id);
+    inst.extra = extra;
+    if !extra {
+        st.bases.insert(base_id, id);
+    }
     st.instances.push(inst);
     id
 }
@@ -850,12 +986,100 @@ fn remove_instance(st: &mut State, id: u32) -> bool {
     }
     inst.hide(&mut st.boxes);
     if let Anchor::Riding { base, base_id, hid, .. } = &inst.anchor {
-        st.bases.remove(base_id);
+        if st.bases.get(base_id) == Some(&id) {
+            st.bases.remove(base_id);
+        }
         if *hid {
             base.set_invisible(false);
         }
     }
     true
+}
+
+/// A player's UUID as 32 hex digits, the way a lead names its holder.
+fn uuid_hex(id: &Uuid) -> String {
+    format!("{:016x}{:016x}", id.high, id.low)
+}
+
+/// Every few ticks: who sees a model on a lead is told of its creature, again when the bone
+/// it rides or the holder are other entities now, and it leaves the games of who went away.
+/// `resend`: tell everyone again what the creature rides (a game that had the bone taken
+/// away and given back keeps the creature but not the ride).
+fn tend_leashes(st: &mut State, server: &Server, resend: bool) {
+    if !st.instances.iter().any(|i| i.leash.is_some()) {
+        return;
+    }
+    let players = server.get_all_players();
+    // name, world, where, UUID, entity
+    let seen: Vec<(String, String, (f64, f64, f64), String, i32)> = players.iter().map(|p| (p.get_name().to_ascii_lowercase(), p.get_world().get_dimension(), p.get_position(), uuid_hex(&p.get_id()), p.as_entity().get_id() as i32)).collect();
+    let (view, keep) = (f64::from(st.cfg.view_distance), f64::from(st.cfg.view_distance) + 8.0);
+    let far = |a: (f64, f64, f64), b: (f64, f64, f64)| ((a.0 - b.0).powi(2) + (a.1 - b.1).powi(2) + (a.2 - b.2).powi(2)).sqrt();
+    let tick = st.tick;
+    for inst in &mut st.instances {
+        let Some(leash) = inst.leash.as_mut() else { continue };
+        let Anchor::Placed { world, pos } = &inst.anchor else { continue };
+        let ride = inst.parts.first().map(|p| p.entity.get_id() as i32);
+        let holder = seen.iter().find(|s| s.3 == leash.holder && s.1 == *world).map(|s| s.4);
+        let (Some(ride), Some(holder)) = (ride, holder) else {
+            leash.drop_all();
+            continue;
+        };
+        let gone = ClientboundPacket::CRemoveEntities(CRemoveEntities { entity_ids: vec![leash.fake] });
+        leash.told.retain(|name, told| match seen.iter().find(|s| s.0 == *name) {
+            Some(s) if s.1 == *world && far(s.2, *pos) <= keep => true,
+            Some(_) => {
+                told.java.send_packet(&gone);
+                false
+            }
+            None => false,
+        });
+        for (i, s) in seen.iter().enumerate() {
+            if s.1 != *world || far(s.2, *pos) > view {
+                continue;
+            }
+            let [spawn, look, rides, held] = leash.packets(*pos, ride, holder);
+            match leash.told.get_mut(&s.0) {
+                Some(told) if told.again.is_some_and(|t| tick >= t) => {
+                    for packet in [&spawn, &look, &rides, &held] {
+                        told.java.send_packet(packet);
+                    }
+                    (told.ride, told.holder, told.again) = (ride, holder, None);
+                }
+                Some(told) if told.again.is_none() => {
+                    // Riding drops the lead in the game: the holder is told again after it
+                    if told.ride != ride || told.holder != holder || resend {
+                        told.java.send_packet(&rides);
+                        told.java.send_packet(&held);
+                        (told.ride, told.holder) = (ride, holder);
+                    }
+                }
+                Some(_) => {}
+                None => {
+                    let Some(java) = players[i].as_java().filter(|j| j.get_version() == LEASH_GAME) else { continue };
+                    for packet in [&spawn, &look, &rides, &held] {
+                        java.send_packet(packet);
+                    }
+                    leash.told.insert(s.0.clone(), Told { java, ride, holder, again: None });
+                }
+            }
+        }
+    }
+}
+
+/// A player's game lost every entity (a respawn, another world): what they were told of goes
+/// to them again, and a lead they hold goes to everyone again (their entity is a new one there).
+fn lost_entities(st: &mut State, p: &Player) {
+    let (name, uuid) = (p.get_name().to_ascii_lowercase(), uuid_hex(&p.get_id()));
+    // The game hears of it a little later: the creature waits for that
+    let again = Some(st.tick + 5);
+    for leash in st.instances.iter_mut().filter_map(|i| i.leash.as_mut()) {
+        let all = leash.holder == uuid;
+        for (who, told) in &mut leash.told {
+            if all || *who == name {
+                told.again = again;
+            }
+        }
+    }
 }
 
 /// Bring the list of models that stand in the world back from `placed.json`.
@@ -899,7 +1123,9 @@ fn apply(st: &mut State, loaded: Loaded) {
     restore_placed(st);
     // Models on creatures, and ones another plugin put somewhere, stay if their model is still there
     for mut inst in riding {
-        match find_model(st, &inst.data.model.name) {
+        // A model made of an item has no file to read again
+        let data = if inst.data.from_item { Some(inst.data.clone()) } else { find_model(st, &inst.data.model.name) };
+        match data {
             Some(data) => {
                 inst.data = data;
                 inst.runs.clear();
@@ -907,7 +1133,9 @@ fn apply(st: &mut State, loaded: Loaded) {
             }
             None => {
                 if let Anchor::Riding { base, base_id, hid, .. } = &inst.anchor {
-                    st.bases.remove(base_id);
+                    if st.bases.get(base_id) == Some(&inst.id) {
+                        st.bases.remove(base_id);
+                    }
                     if *hid {
                         base.set_invisible(false);
                     }
@@ -1008,7 +1236,13 @@ fn look_around(st: &mut State, server: &Server, after: &mut Vec<After>) {
         // A little further to leave than to come, so a player at the edge does not flicker it
         inst.near = nearest <= if inst.near { view + 8.0 } else { view };
         inst.far = nearest > far;
-        let interval = if inst.far { far_interval } else { base_interval };
+        let interval = if inst.quick() {
+            1
+        } else if inst.far {
+            far_interval
+        } else {
+            base_interval
+        };
         if inst.near && !inst.shown() {
             show(inst, server, interval, &mut boxes, &mut scratch);
             inst.due = 0;
@@ -1018,11 +1252,14 @@ fn look_around(st: &mut State, server: &Server, after: &mut Vec<After>) {
             inst.interval = interval;
             for part in &inst.parts {
                 part.display.set_interpolation_duration(interval as i32);
+                part.display.set_teleport_duration(interval.min(59) as i32);
             }
         }
     }
     st.boxes = boxes;
     st.scratch = scratch;
+    let tick = st.tick;
+    st.bodies.retain(|_, b| tick < b.tick + 100);
     for id in gone {
         let owner = st.instances.iter().find(|i| i.id == id).map(|i| i.owner.clone()).unwrap_or_default();
         remove_instance(st, id);
@@ -1052,6 +1289,9 @@ fn on_tick(server: Server) {
         }
         if tick % 20 == 1 {
             look_around(st, &server, &mut after);
+        }
+        if tick % 5 == 2 {
+            tend_leashes(st, &server, tick % 40 == 2);
         }
         if tick >= st.swept + SWEEP_EVERY || st.swept == 0 && tick == 40 {
             st.swept = tick;
@@ -1089,16 +1329,29 @@ fn on_tick(server: Server) {
                 break;
             }
             let dt = if inst.last_tick == 0 { inst.interval.max(1) as f32 } else { (tick - inst.last_tick) as f32 };
-            if let Anchor::Riding { base, .. } = &inst.anchor {
+            if let Anchor::Riding { base, base_id, player, .. } = &inst.anchor {
                 let pos = base.get_position();
                 let moved = ((pos.0 - inst.last_pos.0).powi(2) + (pos.2 - inst.last_pos.2).powi(2)).sqrt();
                 inst.moving = moved > 0.015 * f64::from(dt);
                 inst.last_pos = pos;
-                let yaw = base.get_yaw();
+                let look = base.get_yaw();
+                // A player's yaw is where they look; the body turns after it the game's way
+                let yaw = if *player {
+                    let body = st.bodies.entry(*base_id).or_insert(Body { yaw: rig::wrap(look), at: pos, tick });
+                    if body.tick != tick {
+                        body.yaw = rig::body_turn(body.yaw, look, (pos.0 - body.at.0, pos.2 - body.at.2));
+                        (body.at, body.tick) = (pos, tick);
+                    }
+                    body.yaw
+                } else {
+                    look
+                };
                 // A step of the game's own byte for turns: finer makes no difference to the eye
                 inst.yaw = (yaw * 256.0 / 360.0).round() * 360.0 / 256.0;
                 if inst.data.head {
-                    inst.look = (wrap_degrees(base.get_head_yaw() - yaw).clamp(-75.0, 75.0), base.get_pitch().clamp(-60.0, 60.0));
+                    // Something worn on a head goes as far as a player's head does
+                    let up_down = if inst.extra { 90.0 } else { 60.0 };
+                    inst.look = (wrap_degrees(base.get_head_yaw() - yaw).clamp(-75.0, 75.0), base.get_pitch().clamp(-up_down, up_down));
                 }
             }
             inst.advance(dt);
@@ -1232,12 +1485,47 @@ impl EventHandler<PlayerLeaveEvent> for OnLeave {
         if let Some(mut guard) = try_lock()
             && let Some(st) = guard.as_mut()
         {
-            st.players.remove(&e.player.get_name().to_ascii_lowercase());
-            // A model a player wears leaves with them
+            let name = e.player.get_name().to_ascii_lowercase();
+            st.players.remove(&name);
+            // The models a player wears leave with them
             let id = e.player.as_entity().get_id() as i32;
-            if let Some(model) = st.bases.get(&id).copied() {
+            let worn: Vec<u32> = st.instances.iter().filter(|i| matches!(i.anchor, Anchor::Riding { base_id, .. } if base_id == id)).map(|i| i.id).collect();
+            for model in worn {
                 remove_instance(st, model);
             }
+            st.bodies.remove(&id);
+            let uuid = uuid_hex(&e.player.get_id());
+            for leash in st.instances.iter_mut().filter_map(|i| i.leash.as_mut()) {
+                leash.told.remove(&name);
+                if leash.holder == uuid {
+                    leash.drop_all();
+                }
+            }
+        }
+        e
+    }
+}
+
+struct OnRespawn;
+impl EventHandler<PlayerRespawnEvent> for OnRespawn {
+    fn handle(&self, _server: Server, e: Data_<PlayerRespawnEvent>) -> Data_<PlayerRespawnEvent> {
+        if let Some(mut guard) = try_lock()
+            && let Some(st) = guard.as_mut()
+        {
+            lost_entities(st, &e.player);
+        }
+        e
+    }
+}
+
+struct OnWorld;
+impl EventHandler<PlayerChangeWorldEvent> for OnWorld {
+    fn handle(&self, _server: Server, e: Data_<PlayerChangeWorldEvent>) -> Data_<PlayerChangeWorldEvent> {
+        if !e.cancelled
+            && let Some(mut guard) = try_lock()
+            && let Some(st) = guard.as_mut()
+        {
+            lost_entities(st, &e.player);
         }
         e
     }
@@ -1579,7 +1867,7 @@ fn run(st: &mut State, sender: &CommandSender, server: &Server, w: &[String], af
             if let Some(old) = st.bases.get(&base_id).copied() {
                 remove_instance(st, old);
             }
-            let id = add_riding(st, data, base, "", None);
+            let id = add_riding(st, data, base, "", None, false, None);
             vec![msg(th, &format!("&aใส่ {name} แล้ว &7(เลข {id})"), &format!("&aPut {name} on &7(number {id})"))]
         }
         Some(what @ ("detach" | "unwear")) => {
@@ -1644,9 +1932,11 @@ impl CommandHandler for Cmd {
 ///
 /// | `kind` | fields | answer |
 /// |---|---|---|
-/// | `models` | | `models`: name, animations, hitbox of each |
-/// | `spawn` | `model`, `x`, `y`, `z`, `world`? (dimension), `yaw`?, `scale`?, `animation`?, `name`? | `id` |
-/// | `attach` | `model`, `entity` (its id), `scale`?, `name`? | `id`; the model is on the creature from the next tick |
+/// | `models` | | `models`: name, animations, hitbox, `worn` of each (the item model of the whole model worn in a helmet slot, when it can be one: the game draws it with the head, so it never lags behind) |
+/// | `spawn` | `model` or `item` (as for `attach`, always `body`), `x`, `y`, `z`, `world`? (dimension), `yaw`?, `scale`?, `animation`?, `name`?, `leash`? (a player's UUID: a lead from their hand to the model's feet, seen by players on Java 26.3) | `id`; not kept over a restart |
+/// | `attach` | `model` or `item`, `entity` (its id), `scale`?, `name`?, `extra`?, `hide`? | `id`; the model is on the creature from the next tick |
+/// | | `item`: an item model (`namespace:path`) shown as a model of one bone; with `bone`? (`head`, the default, follows the look; `body`), `offset`? (`[x, y, z]` blocks, +Z behind), `size`?, `turn`? (degrees), `display`? (`head` on the head, else `fixed`) | |
+/// | | `extra`: next to the creature's own model instead of in its place, and the creature stays seen; `hide`: hide the creature or not, whatever the model says | |
 /// | `play` | `id`, `animation`, `mode`? (`once`, `loop`, `hold`), `speed`?, `blend`? (ticks) | `ticks`: its length |
 /// | `stop` | `id`, `animation`? (none = all) | |
 /// | `tint` | `id`, `colour` (`#rrggbb`, none = clear), `ticks`? | |
@@ -1659,6 +1949,35 @@ impl CommandHandler for Cmd {
 /// "player","attack"}` when a player clicks one that stands by itself, and `{"kind":
 /// "model_gone","id","why"}` when the creature under one died (after its death animation), is
 /// gone, or was never found.
+/// The model a message names: `model` (a file of ours) or `item` (an item model the client
+/// has from some pack, as `namespace:path`, made into a model of one bone). `on_creature`:
+/// the item follows the look unless `bone` says `body`.
+fn asked_model(st: &State, v: &serde_json::Value, on_creature: bool) -> Result<Arc<Data>, String> {
+    let text = |key: &str| v.get(key).and_then(serde_json::Value::as_str);
+    let number = |key: &str| v.get(key).and_then(serde_json::Value::as_f64);
+    match (text("model"), text("item")) {
+        (Some(model), _) => find_model(st, model).ok_or_else(|| "no such model".into()),
+        (None, Some(item)) => {
+            let fine = |s: &str| !s.is_empty() && s.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b"_-./".contains(&b));
+            if item.len() > 200 || !item.split_once(':').is_some_and(|(ns, path)| fine(ns) && fine(path)) {
+                return Err("item must be an item model as namespace:path".into());
+            }
+            let head = on_creature && text("bone").unwrap_or("head") != "body";
+            let offset: Vec<f32> = v.get("offset").and_then(serde_json::Value::as_array).map(|a| a.iter().map(|n| n.as_f64().unwrap_or(0.0).clamp(-8.0, 8.0) as f32).collect()).unwrap_or_default();
+            let at = |i: usize| offset.get(i).copied().unwrap_or(0.0);
+            let size = number("size").map_or(1.0, |s| s.clamp(0.01, 16.0) as f32);
+            let turn = number("turn").map_or(0.0, |t| t as f32);
+            let mode = match text("display") {
+                Some(name) => display_mode(name).ok_or("display is one of head, fixed, none, ground, gui, hand")?,
+                None if head => ItemDisplayMode::Head,
+                None => ItemDisplayMode::Fixed,
+            };
+            Ok(Arc::new(item_data(item, on_creature, head, (at(0), at(1), at(2)), size, turn, mode)))
+        }
+        (None, None) => Err("model or item is missing".into()),
+    }
+}
+
 fn ipc(st: &mut State, sender: &str, v: &serde_json::Value) -> Result<serde_json::Value, String> {
     let text = |key: &str| v.get(key).and_then(serde_json::Value::as_str);
     let number = |key: &str| v.get(key).and_then(serde_json::Value::as_f64);
@@ -1681,11 +2000,21 @@ fn ipc(st: &mut State, sender: &str, v: &serde_json::Value) -> Result<serde_json
         Ok(out)
     };
     match text("kind").unwrap_or_default() {
-        "models" => ok(serde_json::json!({ "models": st.models.iter().map(|d| serde_json::json!({ "name": d.model.name, "animations": d.model.animations.iter().map(|a| a.name.clone()).collect::<Vec<_>>(), "hitbox": d.model.hitbox.or(d.set.hitbox) })).collect::<Vec<_>>() })),
+        "models" => ok(serde_json::json!({ "models": st.models.iter().map(|d| serde_json::json!({ "name": d.model.name, "animations": d.model.animations.iter().map(|a| a.name.clone()).collect::<Vec<_>>(), "hitbox": d.model.hitbox.or(d.set.hitbox), "worn": d.worn })).collect::<Vec<_>>() })),
         "spawn" => {
-            let data = find_model(st, text("model").ok_or("model is missing")?).ok_or("no such model")?;
+            let data = asked_model(st, v, false)?;
             let (Some(x), Some(y), Some(z)) = (number("x"), number("y"), number("z")) else { return Err("x, y and z are missing".into()) };
             let world = text("world").unwrap_or("minecraft:overworld").to_owned();
+            let leash = match text("leash") {
+                Some(holder) => {
+                    let hex: String = holder.chars().filter(|c| *c != '-').collect::<String>().to_ascii_lowercase();
+                    if hex.len() != 32 || !hex.bytes().all(|b| b.is_ascii_hexdigit()) {
+                        return Err("leash must be a player's UUID".into());
+                    }
+                    Some(hex)
+                }
+                None => None,
+            };
             let new = add_placed(st, data, world, (x, y, z), number("yaw").unwrap_or(0.0) as f32, sender);
             if let Some(inst) = st.instances.iter_mut().find(|i| i.id == new) {
                 if let Some(scale) = number("scale").filter(|s| (0.01..=100.0).contains(s)) {
@@ -1693,17 +2022,29 @@ fn ipc(st: &mut State, sender: &str, v: &serde_json::Value) -> Result<serde_json
                 }
                 inst.animation = text("animation").map(str::to_owned);
                 inst.tag_text = text("name").unwrap_or_default().chars().take(120).collect();
+                inst.leash = leash.map(|holder| Leash { holder, fake: LEASH_BASE.wrapping_add(new as i32), told: HashMap::new() });
             }
             ok(serde_json::json!({ "id": new }))
         }
         "attach" => {
-            let data = find_model(st, text("model").ok_or("model is missing")?).ok_or("no such model")?;
+            let data = asked_model(st, v, true)?;
             let entity = number("entity").ok_or("entity is missing")? as u32;
             // Finding the creature needs the server, which a message does not bring: the next
             // tick does it. The number is given out now, and what is asked of it waits.
             let new = st.next_id;
             st.next_id += 1;
-            st.pending.push(Pending { id: new, data, entity, owner: sender.to_owned(), scale: number("scale").filter(|s| (0.01..=100.0).contains(s)).map(|s| s as f32), name: text("name").unwrap_or_default().chars().take(120).collect(), then: Vec::new() });
+            let flag = |key: &str| v.get(key).and_then(serde_json::Value::as_bool);
+            st.pending.push(Pending {
+                id: new,
+                data,
+                entity,
+                owner: sender.to_owned(),
+                scale: number("scale").filter(|s| (0.01..=100.0).contains(s)).map(|s| s as f32),
+                name: text("name").unwrap_or_default().chars().take(120).collect(),
+                then: Vec::new(),
+                extra: flag("extra").unwrap_or(false),
+                hide: flag("hide"),
+            });
             ok(serde_json::json!({ "id": new }))
         }
         "play" => {
@@ -1872,6 +2213,7 @@ impl Plugin for Models {
             next_id: 1,
             boxes: HashMap::new(),
             bases: HashMap::new(),
+            bodies: HashMap::new(),
             tick: 0,
             sent: 0,
             stat: Stat::default(),
@@ -1897,6 +2239,8 @@ impl Plugin for Models {
         context.register_event_handler(OnDeath, EventPriority::Normal, false)?;
         context.register_event_handler(OnLeave, EventPriority::Normal, false)?;
         context.register_event_handler(OnStatus, EventPriority::Normal, false)?;
+        context.register_event_handler(OnRespawn, EventPriority::Lowest, false)?;
+        context.register_event_handler(OnWorld, EventPriority::Lowest, false)?;
         context.schedule_repeating_task(1, 1, on_tick);
         Ok(())
     }

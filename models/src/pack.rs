@@ -10,8 +10,8 @@ use serde_json::{Value, json};
 
 use crate::bbmodel::SIDES;
 use crate::defs::{NS, Note, PackConfig};
-use crate::math::Vec3;
-use crate::rig::{Bone, Model};
+use crate::math::{Mat, Vec3};
+use crate::rig::{Bone, Cube, Model};
 
 /// The middle of a model file's space.
 const MIDDLE: f32 = 8.0;
@@ -20,6 +20,18 @@ const MIDDLE: f32 = 8.0;
 pub fn item_id(model: &str, bone: &str) -> String {
     format!("{NS}:{model}/{bone}")
 }
+
+/// The item model of the whole model worn in the helmet slot (see [`worn_model`]). A bone's
+/// name has no dot, so this is never a bone's.
+pub fn worn_id(model: &str) -> String {
+    format!("{NS}:{model}/worn.head")
+}
+
+/// The middle of a player's head on a model drawn around one, in model units, and how many
+/// model units one block of an item worn on the head is: the game draws that item 0.625 of a
+/// block to its block, around the middle of the head.
+const HEAD_MIDDLE: Vec3 = Vec3::new(0.0, 28.0, 0.0);
+const HEAD_BLOCK: f32 = 10.0;
 
 /// Four decimals: more than a model needs, and the same text every time.
 fn tidy(v: f32) -> Value {
@@ -32,32 +44,90 @@ fn point(p: Vec3, bone: &Bone) -> Value {
     json!([tidy(q.x + MIDDLE), tidy(q.y + MIDDLE), tidy(q.z + MIDDLE)])
 }
 
-fn bone_model(model: &Model, bone: &Bone) -> Value {
-    let mut textures = BTreeMap::new();
-    let mut elements = Vec::new();
-    for cube in &bone.cubes {
-        let mut faces = serde_json::Map::new();
-        for (side, face) in SIDES.iter().zip(&cube.faces) {
-            let Some(face) = face else { continue };
-            textures.entry(face.texture.to_string()).or_insert_with(|| format!("{NS}:item/{}/{}", model.name, model.textures[face.texture].name));
-            let mut f = json!({ "uv": face.uv.map(tidy), "texture": format!("#{}", face.texture), "tintindex": 0 });
-            if face.rotation != 0 {
-                f["rotation"] = face.rotation.into();
-            }
-            faces.insert((*side).to_owned(), f);
+/// One cube of a model file; `at` says where a point of the model goes in the file.
+fn element(model: &Model, cube: &Cube, at: &dyn Fn(Vec3) -> Value, textures: &mut BTreeMap<String, String>) -> Value {
+    let mut faces = serde_json::Map::new();
+    for (side, face) in SIDES.iter().zip(&cube.faces) {
+        let Some(face) = face else { continue };
+        textures.entry(face.texture.to_string()).or_insert_with(|| format!("{NS}:item/{}/{}", model.name, model.textures[face.texture].name));
+        let mut f = json!({ "uv": face.uv.map(tidy), "texture": format!("#{}", face.texture), "tintindex": 0 });
+        if face.rotation != 0 {
+            f["rotation"] = face.rotation.into();
         }
-        let mut element = json!({ "from": point(cube.from, bone), "to": point(cube.to, bone), "faces": faces });
-        if let Some((axis, angle, origin)) = cube.turn {
-            let name = ["x", "y", "z"][axis];
-            element["rotation"] = json!({ "angle": angle, "axis": name, "origin": point(origin, bone) });
-        }
-        elements.push(element);
+        faces.insert((*side).to_owned(), f);
     }
+    let mut element = json!({ "from": at(cube.from), "to": at(cube.to), "faces": faces });
+    if let Some((axis, angle, origin)) = cube.turn {
+        let name = ["x", "y", "z"][axis];
+        element["rotation"] = json!({ "angle": angle, "axis": name, "origin": at(origin) });
+    }
+    element
+}
+
+fn model_file(mut textures: BTreeMap<String, String>, elements: Vec<Value>) -> Value {
     // What breaking particles and the like would use
     if let Some(first) = textures.values().next().cloned() {
         textures.insert("particle".to_owned(), first);
     }
     json!({ "textures": textures, "elements": elements })
+}
+
+fn bone_model(model: &Model, bone: &Bone) -> Value {
+    let mut textures = BTreeMap::new();
+    let elements = bone.cubes.iter().map(|cube| element(model, cube, &|p| point(p, bone), &mut textures)).collect();
+    model_file(textures, elements)
+}
+
+/// The whole model as one item a player wears in the helmet slot, drawn around a player the
+/// way a hat sits on one. The game draws that item with the head from the player's own pose,
+/// so it never lags behind a turn. None when it cannot be one item: a bone is turned at rest
+/// (a model file cannot hold that turn) or it reaches too far from the head.
+pub fn worn_model(model: &Model) -> Option<Value> {
+    let turned = |mut i: usize| loop {
+        let bone = &model.bones[i];
+        if bone.rotation != Vec3::ZERO {
+            return true;
+        }
+        match bone.parent {
+            Some(parent) => i = parent,
+            None => return false,
+        }
+    };
+    let drawn: Vec<usize> = model.drawn().collect();
+    if drawn.is_empty() || drawn.iter().any(|&i| turned(i)) {
+        return None;
+    }
+    let cubes = || drawn.iter().flat_map(|&i| model.bones[i].cubes.iter());
+    let reach = cubes().flat_map(|c| [c.from, c.to]).map(|p| p.sub(HEAD_MIDDLE)).map(|d| d.x.abs().max(d.y.abs()).max(d.z.abs())).fold(0.0f32, f32::max);
+    // A file holds -16 to 32, 24 either side of its middle; the head display grows it back
+    let grow = (reach * 16.0 / HEAD_BLOCK / 24.0).max(1.0);
+    if grow > 4.0 {
+        return None;
+    }
+    let k = 16.0 / HEAD_BLOCK / grow;
+    let place = |p: Vec3| p.sub(HEAD_MIDDLE).scale(k).add(Vec3::new(MIDDLE, MIDDLE, MIDDLE));
+    let at = |p: Vec3| {
+        let q = place(p);
+        json!([tidy(q.x), tidy(q.y), tidy(q.z)])
+    };
+    let mut textures = BTreeMap::new();
+    let elements = cubes().map(|cube| element(model, cube, &at, &mut textures)).collect();
+    let mut file = model_file(textures, elements);
+    // In a window (the player's own armour slot): turned the way a block is, as large as fits
+    let (mut lo, mut hi) = (Vec3::new(f32::MAX, f32::MAX, f32::MAX), Vec3::new(f32::MIN, f32::MIN, f32::MIN));
+    for p in cubes().flat_map(|c| [c.from, c.to]).map(place) {
+        (lo, hi) = (Vec3::new(lo.x.min(p.x), lo.y.min(p.y), lo.z.min(p.z)), Vec3::new(hi.x.max(p.x), hi.y.max(p.y), hi.z.max(p.z)));
+    }
+    let size = hi.sub(lo);
+    let fit = (10.0 / size.x.max(size.y).max(size.z).max(0.01)).min(4.0);
+    let turn = Mat::rot_x(30f32.to_radians()).mul(&Mat::rot_y(225f32.to_radians()));
+    let centre = turn.vector(lo.add(hi).scale(0.5).sub(Vec3::new(MIDDLE, MIDDLE, MIDDLE)).scale(-fit));
+    let clamp = |v: f32| tidy(v.clamp(-80.0, 80.0));
+    file["display"] = json!({
+        "head": { "scale": [tidy(grow), tidy(grow), tidy(grow)] },
+        "gui": { "rotation": [30, 225, 0], "translation": [clamp(centre.x), clamp(centre.y), clamp(centre.z)], "scale": [tidy(fit), tidy(fit), tidy(fit)] },
+    });
+    Some(file)
 }
 
 /// The files made from the models.
@@ -85,6 +155,10 @@ pub fn generate(models: &[&Model], out: &mut Vec<Note>) -> Vec<Entry> {
                 format!("assets/{NS}/items/{}/{}.json", model.name, bone.name),
                 &json!({ "model": { "type": "minecraft:model", "model": format!("{NS}:item/{}/{}", model.name, bone.name), "tints": [ { "type": "minecraft:dye", "default": 0xFF_FFFF } ] } }),
             ));
+        }
+        if let Some(file) = worn_model(model) {
+            entries.push(Entry::json(format!("assets/{NS}/models/item/{}/worn.head.json", model.name), &file));
+            entries.push(Entry::json(format!("assets/{NS}/items/{}/worn.head.json", model.name), &json!({ "model": { "type": "minecraft:model", "model": format!("{NS}:item/{}/worn.head", model.name) } })));
         }
     }
     for e in &entries {
@@ -170,6 +244,30 @@ mod tests {
         // The leg's cube carries no turn of its own: its bone does
         let leg: Value = serde_json::from_slice(&file(&entries, "assets/models/models/item/test_creature/leg_leg.json").data).unwrap();
         assert!(leg["elements"][0].get("rotation").is_none());
+    }
+
+    #[test]
+    fn a_whole_model_can_be_worn_on_the_head_around_its_middle() {
+        let mut m = model();
+        // A bone turned at rest cannot go into one file
+        assert!(worn_model(&m).is_none());
+        m.bones[4].cubes.clear();
+        let worn = worn_model(&m).unwrap();
+        // The body's cube reaches 20 units below the middle of the head (28 up): the file
+        // holds it a third smaller and the head display grows it back
+        assert_eq!(worn["display"]["head"]["scale"], json!([1.3333, 1.3333, 1.3333]));
+        assert_eq!(worn["elements"].as_array().unwrap().len(), 2);
+        assert_eq!(worn["elements"][0]["from"], json!([3.2, -16.0, 0.8]));
+        assert_eq!(worn["elements"][0]["to"], json!([12.8, -6.4, 15.2]));
+        assert_eq!(worn["elements"][1]["rotation"]["angle"], 22.5);
+        // In the pack by a name no bone can have
+        let entries = generate(&[&m], &mut Vec::new());
+        let item: Value = serde_json::from_slice(&file(&entries, "assets/models/items/test_creature/worn.head.json").data).unwrap();
+        assert_eq!(item["model"]["model"], "models:item/test_creature/worn.head");
+        assert_eq!(worn_id(&m.name), "models:test_creature/worn.head");
+        // Too far from the head for the display to grow it back
+        m.bones[1].cubes[0].to.y = 100.0;
+        assert!(worn_model(&m).is_none());
     }
 
     #[test]

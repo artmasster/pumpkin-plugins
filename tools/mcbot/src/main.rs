@@ -19,11 +19,12 @@
 //! these strings: enough to see an item model or a font reach the client without reading items.
 //! `MCBOT_META=1` prints what entities are told: `META <entity id> <index>:<value> ...` for
 //! entity data (the value types of display entities are read; another type ends the line as
-//! `<index>:type<n>..`), `PASSENGERS <vehicle> [ids]`, `REMOVED [ids]`. It also counts every
+//! `<index>:type<n>..`), `PASSENGERS <vehicle> [ids]`, `LINK <leashed> <holder>`, `REMOVED [ids]`. It also counts every
 //! play packet: the step `counts` prints `COUNTS <packet>=<n> ...` and `MOVES type<n>=<count>
 //! ...` (movement packets by the type of the entity that moved) since the last `counts`.
 //! Also printed: `BLOCK x y z <state id>` for single block updates, `WINDOW id type title`,
-//! `CONTENT window state slots` when a window's items arrive, `WINDOWCLOSED`.
+//! `CONTENT window state slots` when a window's items arrive, `SLOT window state slot count=n`
+//! for one slot (5 is the helmet in the player's own window 0), `WINDOWCLOSED`.
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::sync::mpsc;
@@ -477,6 +478,9 @@ fn main() {
                     let n = r.varint().unwrap_or(0);
                     let ids: Vec<String> = (0..n).filter_map(|_| r.varint()).map(|v| v.to_string()).collect();
                     println!("PASSENGERS {vehicle} [{}]", ids.join(","));
+                } else if meta && id == cb::play::SET_ENTITY_LINK.0 {
+                    let (attached, holder) = (r.i32().unwrap_or(-1), r.i32().unwrap_or(-1));
+                    println!("LINK {attached} {holder}");
                 } else if meta && id == cb::play::REMOVE_ENTITIES.0 {
                     let n = r.varint().unwrap_or(0);
                     let ids: Vec<String> = (0..n).filter_map(|_| r.varint()).map(|v| v.to_string()).collect();
@@ -546,6 +550,11 @@ fn main() {
                         w.1 = state;
                     }
                     println!("CONTENT {wid} {state} {slots}");
+                } else if id == cb::play::CONTAINER_SET_SLOT.0 {
+                    let (wid, state) = (r.varint().unwrap_or(0), r.varint().unwrap_or(0));
+                    let slot = r.take(2).map_or(-1, |b| i16::from_be_bytes([b[0], b[1]]));
+                    let count = r.varint().unwrap_or(0);
+                    println!("SLOT {wid} {state} {slot} count={count}");
                 } else if id == cb::play::CONTAINER_CLOSE.0 {
                     *window.lock().unwrap() = (0, 0);
                     println!("WINDOWCLOSED");

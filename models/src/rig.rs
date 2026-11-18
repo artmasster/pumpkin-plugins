@@ -384,6 +384,52 @@ pub fn lead(root: &Mat) -> Mat {
     root.mul(&FLIP).mul(&Mat::scaling(Vec3::new(1.0 / UNITS, 1.0 / UNITS, 1.0 / UNITS)))
 }
 
+/// A model that is one item another plugin names (a hat, a backpack): one bone without cubes
+/// of its own, which turns around `pivot` and draws the item with its middle at `at` (model
+/// units), `size` times as large as the item is, turned `turn` degrees about the up axis.
+/// A head bone follows where the creature looks.
+pub fn single(name: &str, head: bool, pivot: Vec3, at: Vec3, size: f32, turn: f32) -> Model {
+    let kind = if head { Kind::Head } else { Kind::Plain };
+    // The cube only marks the bone as one that is drawn; the model never goes into a pack
+    let mark = Cube { from: Vec3::ZERO, to: Vec3::ZERO, turn: None, faces: Default::default() };
+    let bone = Bone { name: if head { "h_item" } else { "item" }.into(), parent: None, pivot, rotation: Vec3::ZERO, kind, cubes: vec![mark], fit: 1.0 };
+    let grow = UNITS * size;
+    let tail = Mat::translation(at).mul(&Mat::rot_y(turn.to_radians())).mul(&Mat::scaling(Vec3::new(grow, grow, grow))).mul(&FLIP);
+    Model { name: name.to_owned(), bones: vec![bone], textures: Vec::new(), animations: Vec::new(), hitbox: None, notes: Vec::new(), rest: vec![Mat::IDENTITY], tail: vec![tail] }
+}
+
+/// The game draws a player 15/16 of the size a model of one is drawn at (a head 8 units high
+/// is 7.5 on screen): what is made to sit on a player gets the same.
+pub const PLAYER_SIZE: f32 = 0.9375;
+
+/// Degrees between -180 and 180.
+pub fn wrap(a: f32) -> f32 {
+    let r = a.rem_euclid(360.0);
+    if r >= 180.0 { r - 360.0 } else { r }
+}
+
+/// One tick of how the game turns a creature's body, which a server is never told for a
+/// player: the body turns towards where it walks (walking backwards keeps it facing forward),
+/// and the head never turns more than 50 degrees away from it. `look` is the head's yaw, `step`
+/// how far it went this tick along x and z.
+pub fn body_turn(body: f32, look: f32, step: (f64, f64)) -> f32 {
+    const NECK: f32 = 50.0;
+    let (dx, dz) = step;
+    let mut want = body;
+    if dx * dx + dz * dz > 0.0025 {
+        // The game's own sums, with its odd ranges, so the turn is the same as on the screen
+        let walk = (dz.atan2(dx).to_degrees() as f32) - 90.0;
+        let off = (wrap(look) - walk).abs();
+        want = if 95.0 < off && off < 265.0 { walk - 180.0 } else { walk };
+    }
+    let mut turned = body + wrap(want - body) * 0.3;
+    let neck = wrap(look - turned);
+    if neck.abs() > NECK {
+        turned += neck - neck.signum() * NECK;
+    }
+    wrap(turned)
+}
+
 /// The part of a bone's transformation that depends on the bone alone.
 fn tail(bone: &Bone) -> Mat {
     let grow = UNITS / bone.fit;
@@ -484,6 +530,57 @@ pub mod tests {
         let front = drawn(Vec3::new(0.0, 12.0, -6.0).sub(body.pivot));
         assert!(near(front, Vec3::new(0.0, 0.75, 0.375)), "{front:?}");
         assert!(near(place(Vec3::new(0.0, 12.0, -6.0), &world[1], &root), front));
+    }
+
+    #[test]
+    fn an_item_on_the_head_turns_around_the_neck() {
+        let (pivot, at) = (Vec3::new(0.0, 24.0, 0.0), Vec3::new(0.0, 28.0, 0.0));
+        let m = single("item:hat", true, pivot, at, 1.0, 0.0);
+        assert_eq!(m.drawn().count(), 1);
+        assert!(m.has(Kind::Head));
+        let root = root(0.0, 1.0, 0.0);
+        let mut world = Vec::new();
+        m.pose(&[], None, &mut world);
+        let s = shown(&m.tail[0], &world[0], &lead(&root));
+        // The item's middle where the head's middle is, at the item's own size
+        assert!(near(s.translation, Vec3::new(0.0, 1.75, 0.0)), "{s:?}");
+        assert!(near(s.scale, Vec3::ONE));
+        // Looking straight down tips the top of the head forward (south at yaw 0)
+        m.pose(&[], Some((0.0, 90.0)), &mut world);
+        let s = shown(&m.tail[0], &world[0], &lead(&root));
+        assert!(near(s.translation, Vec3::new(0.0, 1.5, 0.25)), "{s:?}");
+        // On the back: no turn with the look, half the size
+        let m = single("item:bag", false, pivot, Vec3::new(0.0, 18.0, 3.0), 0.5, 0.0);
+        m.pose(&[], Some((40.0, 90.0)), &mut world);
+        let s = shown(&m.tail[0], &world[0], &lead(&root));
+        assert!(near(s.translation, Vec3::new(0.0, 1.125, -0.1875)), "{s:?}");
+        assert!(near(s.scale, Vec3::new(0.5, 0.5, 0.5)));
+    }
+
+    #[test]
+    fn the_body_follows_the_walk_and_the_head_as_in_the_game() {
+        let close = |a: f32, b: f32| (wrap(a - b)).abs() < 0.01;
+        // Standing: the head turns alone up to 50 degrees, then pulls the body along
+        assert!(close(body_turn(0.0, 30.0, (0.0, 0.0)), 0.0));
+        assert!(close(body_turn(0.0, 80.0, (0.0, 0.0)), 30.0));
+        assert!(close(body_turn(170.0, -170.0, (0.0, 0.0)), 170.0));
+        // Walking south while looking south: the body turns to it a third at a time
+        let mut body = 40.0;
+        for _ in 0..30 {
+            body = body_turn(body, 0.0, (0.0, 0.2));
+        }
+        assert!(close(body, 0.0), "{body}");
+        // Walking backwards (north while looking south) keeps the body facing south
+        assert!(close(body_turn(0.0, 0.0, (0.0, -0.2)), 0.0));
+        // Walking west (yaw 90) while looking south: the body goes as far as the neck lets it
+        let mut body = 0.0;
+        for _ in 0..30 {
+            body = body_turn(body, 0.0, (-0.2, 0.0));
+        }
+        assert!(close(body, 50.0), "{body}");
+        // A step too small to count changes nothing
+        assert!(close(body_turn(10.0, 0.0, (0.01, 0.01)), 10.0));
+        assert!(close(wrap(540.0), 180.0) && close(wrap(-190.0), 170.0));
     }
 
     #[test]

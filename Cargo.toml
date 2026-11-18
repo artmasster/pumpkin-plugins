@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["common", "pregen", "bedrock","basics", "tablist", "worldtools", "blocklog", "perms", "scripts-plugin", "login", "monitor", "discordlink", "worldmap", "claims", "cleaner", "motd", "placeholders", "skins", "resourcepack", "imagemap", "customitems", "models", "mobs", "cosmetics", "webserver", "packfile", "tools/mcbot"]
+members = ["common", "pregen", "bedrock","basics", "tablist", "worldtools", "blocklog", "perms", "scripts-plugin", "login", "monitor", "discordlink", "worldmap", "claims", "cleaner", "motd", "placeholders", "skins", "resourcepack", "imagemap", "customitems", "models", "mobs", "cosmetics", "crops", "webserver", "packfile", "tools/mcbot"]
 
 [workspace.package]
 version = "0.9.0"

@@ -54,8 +54,8 @@ const PART: &str = "part";
 const MAX_MODELS: usize = 2000;
 /// A player standing is this high: what rides one sits on top of it.
 const PLAYER_HEIGHT: f32 = 1.8;
-/// The number a lead's creature has in the games told of it (plus the model's number): far
-/// above any the server gives its own entities.
+/// The number a lead's creature has (plus the model's number) until its marker is made (see
+/// `Leash`): far above any the server gives its own entities. No game is told of it.
 const LEASH_BASE: i32 = 0x5A00_0000;
 /// A silverfish, in the game this is built for: the smallest creature, so the lead ends where
 /// the model is. Only players on that game are told (see `Leash`).
@@ -164,11 +164,16 @@ enum Anchor {
 ///
 /// The game drops a creature's lead whenever the creature starts to ride: whatever tells it
 /// what the creature rides tells it who holds the lead right after.
+///
+/// A player who hits the creature sends its number to the server, and Pumpkin kicks a player
+/// who hits a number it does not know. So the creature has the number of a marker the server
+/// does have: a marker is never sent to any game, so nothing else in the games has that number.
 struct Leash {
     /// The player who holds it: UUID as 32 hex digits.
     holder: String,
-    /// The creature's number in the games told of it.
+    /// The creature's number in the games told of it: its marker's, once that is made.
     fake: i32,
+    marker: Option<Entity>,
     /// Who was told, by lowercase name.
     told: HashMap<String, Told>,
 }
@@ -985,6 +990,9 @@ fn remove_instance(st: &mut State, id: u32) -> bool {
         }
     }
     inst.hide(&mut st.boxes);
+    if let Some(marker) = inst.leash.as_ref().and_then(|l| l.marker.as_ref()) {
+        marker.remove();
+    }
     if let Anchor::Riding { base, base_id, hid, .. } = &inst.anchor {
         if st.bases.get(base_id) == Some(&id) {
             st.bases.remove(base_id);
@@ -1018,6 +1026,13 @@ fn tend_leashes(st: &mut State, server: &Server, resend: bool) {
     for inst in &mut st.instances {
         let Some(leash) = inst.leash.as_mut() else { continue };
         let Anchor::Placed { world, pos } = &inst.anchor else { continue };
+        if leash.marker.is_none() {
+            let Some(w) = world_named(server, world) else { continue };
+            let marker = w.spawn_entity(EntityType::Marker, *pos);
+            mark(&marker);
+            leash.fake = marker.get_id() as i32;
+            leash.marker = Some(marker);
+        }
         let ride = inst.parts.first().map(|p| p.entity.get_id() as i32);
         let holder = seen.iter().find(|s| s.3 == leash.holder && s.1 == *world).map(|s| s.4);
         let (Some(ride), Some(holder)) = (ride, holder) else {
@@ -2022,7 +2037,7 @@ fn ipc(st: &mut State, sender: &str, v: &serde_json::Value) -> Result<serde_json
                 }
                 inst.animation = text("animation").map(str::to_owned);
                 inst.tag_text = text("name").unwrap_or_default().chars().take(120).collect();
-                inst.leash = leash.map(|holder| Leash { holder, fake: LEASH_BASE.wrapping_add(new as i32), told: HashMap::new() });
+                inst.leash = leash.map(|holder| Leash { holder, fake: LEASH_BASE.wrapping_add(new as i32), marker: None, told: HashMap::new() });
             }
             ok(serde_json::json!({ "id": new }))
         }

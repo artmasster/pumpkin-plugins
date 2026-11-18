@@ -103,6 +103,8 @@ enum Kind {
 }
 
 static STATE: Mutex<Option<State>> = Mutex::new(None);
+/// The server, for messages from other plugins (they do not bring it).
+static SERVER: Mutex<Option<Server>> = Mutex::new(None);
 
 /// Never blocks: WASM has one thread and Pumpkin calls handlers from inside host calls.
 fn try_lock() -> Option<std::sync::MutexGuard<'static, Option<State>>> {
@@ -949,6 +951,7 @@ impl Plugin for CustomItems {
         }
         c::log_info(&format!("{} item(s), {} glyph(s), pack {}", st.items.len(), st.glyphs.len(), st.pack.as_ref().map_or_else(|| "not built".to_owned(), |b| format!("{} KB in {} ms", b.bytes.len().div_ceil(1024), b.took_ms))));
         *STATE.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(st);
+        *SERVER.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(context.get_server());
         c::save_json("status.json", &serde_json::json!({ "version": VERSION, "loaded_at": c::now_secs() }));
 
         // No `.suggest()`: Pumpkin 0.2.2 panics when a console that is a TTY asks a WASM plugin for suggestions
@@ -969,17 +972,46 @@ impl Plugin for CustomItems {
         Ok(())
     }
 
-    /// `%customitems_<glyph>%` for the Placeholders plugin: {"kind":"placeholder","params":"coin"}
+    /// Messages from other plugins, as JSON:
+    ///
+    /// | `kind` | fields | answer |
+    /// |---|---|---|
+    /// | `placeholder` | `params` (a glyph, for `%customitems_<glyph>%` of Placeholders) | `value` |
+    /// | `items` | | `items`: `id`, `name`, `material`, `model` (the item model, or none) of each |
+    /// | `give` | `player` (name, or UUID with or without dashes), `item` (an id), `count` | `left`: how many did not fit in the inventory |
     fn handle_ipc_message(&self, _sender: String, message: Vec<u8>) -> Result<Vec<u8>, String> {
         let v: serde_json::Value = serde_json::from_slice(&message).map_err(|e| e.to_string())?;
-        if v.get("kind").and_then(serde_json::Value::as_str) != Some("placeholder") {
-            return Err("unknown kind".into());
-        }
-        let name = v.get("params").and_then(serde_json::Value::as_str).unwrap_or("");
+        let text = |key: &str| v.get(key).and_then(serde_json::Value::as_str).unwrap_or("");
         let guard = try_lock().ok_or("busy")?;
         let st = guard.as_ref().ok_or("not loaded")?;
-        let ch = st.glyphs.get(name.strip_prefix("glyph_").unwrap_or(name)).ok_or("unknown glyph")?;
-        serde_json::to_vec(&serde_json::json!({ "value": ch.to_string() })).map_err(|e| e.to_string())
+        let answer = match text("kind") {
+            "placeholder" => {
+                let name = text("params");
+                let ch = st.glyphs.get(name.strip_prefix("glyph_").unwrap_or(name)).ok_or("unknown glyph")?;
+                serde_json::json!({ "value": ch.to_string() })
+            }
+            "items" => serde_json::json!({ "ok": true, "items": st.items.iter().map(|i| serde_json::json!({ "id": i.id, "name": i.name, "material": i.material, "model": i.model_id().filter(|_| !st.plain.contains(&i.id)) })).collect::<Vec<_>>() }),
+            "give" => {
+                let item = st.items.iter().find(|i| i.id == text("item").to_ascii_lowercase()).ok_or("no such item")?;
+                let count = v.get("count").and_then(serde_json::Value::as_u64).unwrap_or(1).clamp(1, 64 * 36) as u32;
+                let server = SERVER.try_lock().map_err(|_| "busy")?;
+                let who = text("player");
+                let hex: String = who.chars().filter(|c| *c != '-').collect::<String>().to_ascii_lowercase();
+                let p = server
+                    .as_ref()
+                    .ok_or("not loaded")?
+                    .get_all_players()
+                    .into_iter()
+                    .find(|p| {
+                        let id = p.get_id();
+                        p.get_name().eq_ignore_ascii_case(who) || format!("{:016x}{:016x}", id.high, id.low) == hex
+                    })
+                    .ok_or("no such player online")?;
+                serde_json::json!({ "ok": true, "left": give(st, &p, item, count) })
+            }
+            _ => return Err("unknown kind".into()),
+        };
+        serde_json::to_vec(&answer).map_err(|e| e.to_string())
     }
 }
 

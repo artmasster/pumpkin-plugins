@@ -14,7 +14,7 @@
 //!   click <slot> [button] [mode]  (in the window the server opened)   closewin
 //!   useitem [yaw] [pitch]  (right click into the air with the held item; pitch 90 = down)
 //!   interact <entity id | type=N>   (right click an entity; ids come from the `ENTITY <id>
-//!   type=<n>` lines, `type=N` means the newest entity of that type)
+//!   type=<n>` lines, `type=N` means the newest entity of that type)   attack <same>
 //! `MCBOT_FIND=a,b` prints `FOUND <text> in <packet>` for every play packet that carries one of
 //! these strings: enough to see an item model or a font reach the client without reading items.
 //! `MCBOT_META=1` prints what entities are told: `META <entity id> <index>:<value> ...` for
@@ -791,6 +791,20 @@ fn main() {
                     let _ = conn.lock().unwrap().send(sb::play::INTERACT.0, &b);
                     let _ = conn.lock().unwrap().send(sb::play::SWING.0, &[0]);
                     println!("INTERACTED {eid}");
+                }
+            }
+            "attack" => {
+                // attack <entity id | type=N>: left click an entity, then swing as the game does
+                let target = match rest.trim().strip_prefix("type=") {
+                    Some(kind) => kind.parse::<i32>().ok().and_then(|k| seen.lock().unwrap().get(&k).copied()),
+                    None => rest.trim().parse::<i32>().ok(),
+                };
+                if let Some(eid) = target {
+                    let mut b = Vec::new();
+                    put_varint(&mut b, eid);
+                    let _ = conn.lock().unwrap().send(sb::play::ATTACK.0, &b);
+                    let _ = conn.lock().unwrap().send(sb::play::SWING.0, &[0]);
+                    println!("ATTACKED {eid}");
                 }
             }
             "closewin" => {

@@ -1,0 +1,21 @@
+[package]
+name = "quests"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Quests with goals and rewards, given by NPCs or from a window, for Pumpkin by MCSV (Quests/BetonQuest style)"
+
+# WASM component plugin: build with `cargo build --release --target wasm32-wasip2 -p quests`.
+# Works with the Npcs plugin (quests at NPCs), Basics (money) and CustomItems (items).
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+toml.workspace = true
+
+[target.'cfg(target_family = "wasm")'.dependencies]
+pumpkin-plugin-api.workspace = true
+mcsv-common.workspace = true

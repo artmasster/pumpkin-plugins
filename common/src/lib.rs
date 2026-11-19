@@ -2,6 +2,10 @@
 //! config files and command suggestions.
 #[cfg(feature = "http")]
 pub mod http;
+pub mod deeds;
+pub mod game;
+pub mod items;
+pub mod names;
 pub mod particles;
 pub mod sha1;
 pub mod tables;
@@ -187,6 +191,17 @@ pub fn remove_file(rel: &str) {
     let _ = std::fs::remove_file(data_path(rel));
 }
 
+/// The panel shows a plugin as running while `status.json` is in its data folder with a load time
+/// after its file was installed (API `pumpkin_plugins::Running`): call at the end of `on_load`.
+pub fn mark_running(version: &str) {
+    save_json("status.json", &serde_json::json!({ "version": version, "loaded_at": now_secs() }));
+}
+
+/// The plugin is no longer running: call in `on_unload`.
+pub fn mark_stopped() {
+    remove_file("status.json");
+}
+
 fn write_atomic(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
@@ -258,4 +273,37 @@ pub fn placeholders(text: &str, player: Option<&str>) -> String {
 /// `h:mm:ss`
 pub fn hms(secs: u64) -> String {
     format!("{}:{:02}:{:02}", secs / 3600, secs / 60 % 60, secs % 60)
+}
+
+/// The text of a stack as [`items`] writes it (its name and, when it has any, its data), at
+/// most `max` characters before its data is dropped. `None` for nothing or air.
+pub fn item_text(stack: &pumpkin_plugin_api::ItemStack, max: usize) -> Option<String> {
+    let name = stack.get_registry_key();
+    let name = name.strip_prefix("minecraft:").unwrap_or(&name);
+    if name.is_empty() || name == "air" {
+        return None;
+    }
+    let parts: Vec<(u16, Vec<u8>)> = stack.get_components().into_iter().map(|c| (c.component as u16, c.value)).collect();
+    Some(items::encode(name, &parts, max))
+}
+
+/// The component with that number, for numbers this server's API has.
+fn component(id: u16) -> Option<pumpkin_plugin_api::data_components::DataComponent> {
+    use pumpkin_plugin_api::data_components::DataComponent;
+    // Numbers come from our own files; the list only ever grows at its end
+    (id <= DataComponent::CushionColor as u16).then(|| unsafe { DataComponent::_lift(id as u8) })
+}
+
+/// A stack of `count` of an item [`items`] described. `None` when this server has no such item.
+pub fn make_stack(item: &items::Item, count: u8) -> Option<pumpkin_plugin_api::ItemStack> {
+    let stack = pumpkin_plugin_api::ItemStack::new(&format!("minecraft:{}", item.name), count);
+    if stack.get_registry_key().trim_start_matches("minecraft:") != item.name || stack.get_count() == 0 {
+        return None;
+    }
+    for (id, value) in &item.parts {
+        if let Some(kind) = component(*id) {
+            stack.set_component(kind, value);
+        }
+    }
+    Some(stack)
 }

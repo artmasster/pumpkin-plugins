@@ -13,7 +13,6 @@ use mcsv_common as c;
 use pumpkin_plugin_api::block_entity::{BlockEntityType, ContainerBlockEntity};
 use pumpkin_plugin_api::command::{ArgumentType, Command, CommandError, CommandNode, CommandSender, ConsumedArgs, StringType};
 use pumpkin_plugin_api::commands::CommandHandler;
-use pumpkin_plugin_api::data_components::DataComponent;
 use pumpkin_plugin_api::events::{
     BlockBreakEvent, BlockBurnEvent, BlockExplodeEvent, BlockFromToEvent, BlockGrowEvent, BlockPistonExtendEvent, BlockPistonRetractEvent, BlockPlaceEvent,
     BlockSpreadEvent, EntityChangeBlockEvent, EntityDamageByEntityEvent, EntityDeathEvent, EventHandler, EventPriority, FromIntoEvent, InventoryCloseEvent,
@@ -33,7 +32,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::engine::{Job, Mode, Outcome, Purge, Stored, WorldEdit};
 use crate::ipc;
-use crate::items;
+use mcsv_common::items;
 use crate::params::{self, ActionSet, ParamError, Params, Radius, world_key};
 use crate::query::{Area, Query, Row, block_name};
 use crate::record::{Action, MAX_ITEM, MAX_TEXT, TextRec, clean};
@@ -859,36 +858,9 @@ fn contents(world: &World, parts: &[P]) -> Option<HashMap<String, u32>> {
     Some(found)
 }
 
-/// The record text of a stack: its name and, when it has any, its data (see `items`).
-/// Two stacks with the same text are the same item.
+/// The record text of a stack (see `items`). Two stacks with the same text are the same item.
 fn item_text(stack: &ItemStack) -> Option<String> {
-    let name = stack.get_registry_key();
-    let name = name.strip_prefix("minecraft:").unwrap_or(&name);
-    if name.is_empty() || name == "air" {
-        return None;
-    }
-    let parts: Vec<(u16, Vec<u8>)> = stack.get_components().into_iter().map(|c| (c.component as u16, c.value)).collect();
-    Some(items::encode(name, &parts, MAX_ITEM))
-}
-
-/// The component with that number, for numbers this server's API has.
-fn component(id: u16) -> Option<DataComponent> {
-    // Numbers come from our own log; the list only ever grows at its end
-    (id <= DataComponent::CushionColor as u16).then(|| unsafe { DataComponent::_lift(id as u8) })
-}
-
-/// A stack as a container record describes it. `None` when this server has no such item.
-fn make_stack(item: &items::Item, count: u8) -> Option<ItemStack> {
-    let stack = ItemStack::new(&format!("minecraft:{}", item.name), count);
-    if stack.get_registry_key().trim_start_matches("minecraft:") != item.name || stack.get_count() == 0 {
-        return None;
-    }
-    for (id, value) in &item.parts {
-        if let Some(kind) = component(*id) {
-            stack.set_component(kind, value);
-        }
-    }
-    Some(stack)
+    c::item_text(stack, MAX_ITEM)
 }
 
 /// Put items into (`count > 0`) or take them out of (`count < 0`) the container at `at`.
@@ -920,7 +892,7 @@ fn change_container(world: &World, at: P, text: &str, count: i64) -> Stored {
         // What is no longer there cannot be taken out; the record is done all the same
         return Stored::Done;
     }
-    let Some(sample) = make_stack(&item, 1) else { return Stored::NoRoom };
+    let Some(sample) = c::make_stack(&item, 1) else { return Stored::NoRoom };
     let max = u32::from(sample.get_max_count().max(1));
     // First see that it all fits: half a return is worse than none
     let mut room = 0u32;
@@ -950,7 +922,7 @@ fn change_container(world: &World, at: P, text: &str, count: i64) -> Stored {
             break;
         }
         let put = left.min(max - have);
-        let Some(stack) = make_stack(&item, (have + put) as u8) else { return Stored::NoRoom };
+        let Some(stack) = c::make_stack(&item, (have + put) as u8) else { return Stored::NoRoom };
         containers[i].set_stack(slot, Some(stack));
         left -= put;
     }

@@ -274,7 +274,7 @@ checksum = "2af50177e190e07a26ab74f8b1efbfe2ef87da2116221318cb1c2e82baf7de06"
 
 [[package]]
 name = "basics"
-version = "0.9.0"
+version = "0.10.1"
 dependencies = [
  "mcsv-common",
  "pumpkin-plugin-api",
@@ -286,7 +286,7 @@ dependencies = [
 
 [[package]]
 name = "bedrock"
-version = "0.9.0"
+version = "0.10.1"
 dependencies = [
  "customitems",
  "libc",
@@ -358,7 +358,7 @@ dependencies = [
 
 [[package]]
 name = "blocklog"
-version = "0.9.0"
+version = "0.10.1"
 dependencies = [
  "mcsv-common",
  "pumpkin-plugin-api",
@@ -466,6 +466,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "chatguard"
+version = "0.10.1"
+dependencies = [
+ "mcsv-common",
+ "pumpkin-plugin-api",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "cipher"
 version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -487,7 +497,7 @@ dependencies = [
 
 [[package]]
 name = "claims"
-version = "0.9.0"
+version = "0.10.1"
 dependencies = [
  "mcsv-common",
  "pumpkin-plugin-api",
@@ -497,8 +507,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "clans"
+version = "0.10.1"
+dependencies = [
+ "mcsv-common",
+ "pumpkin-plugin-api",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "cleaner"
-version = "0.9.0"
+version = "0.10.1"
 dependencies = [
  "mcsv-common",
  "pumpkin-plugin-api",
@@ -592,7 +612,7 @@ checksum = "773648b94d0e5d620f64f280777445740e61fe701025087ec8b57f45c791888b"
 
 [[package]]
 name = "cosmetics"
-version = "0.9.0"
+version = "0.10.1"
 dependencies = [
  "mcsv-common",
  "pumpkin-plugin-api",
@@ -623,6 +643,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5ca28b0ae3115b884660db4118d803791fd6756b6e88f39c0f3f7859060d7566"
 dependencies = [
  "libc",
+]
+
+[[package]]
+name = "crates"
+version = "0.10.1"
+dependencies = [
+ "mcsv-common",
+ "pumpkin-plugin-api",
+ "serde",
+ "serde_json",
+ "toml 0.8.23",
 ]
 
 [[package]]
@@ -666,7 +697,7 @@ checksum = "790eea4361631c5e7d22598ecd5723ff611904e3344ce8720784c93e3d83d40b"
 
 [[package]]
 name = "crops"
-version = "0.9.0"
+version = "0.10.1"
 dependencies = [
  "mcsv-common",
  "pumpkin-plugin-api",
@@ -827,7 +858,7 @@ dependencies = [
 
 [[package]]
 name = "customitems"
-version = "0.9.0"
+version = "0.10.1"
 dependencies = [
  "mcsv-common",
  "mcsv-pack",
@@ -929,7 +960,7 @@ dependencies = [
 
 [[package]]
 name = "discordlink"
-version = "0.9.0"
+version = "0.10.1"
 dependencies = [
  "mcsv-common",
  "pumpkin-plugin-api",
@@ -1119,6 +1150,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "furniture"
+version = "0.10.1"
+dependencies = [
+ "mcsv-common",
+ "pumpkin-plugin-api",
+ "serde",
+ "serde_json",
+ "toml 0.8.23",
+]
+
+[[package]]
 name = "futures"
 version = "0.3.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1251,6 +1293,16 @@ dependencies = [
  "r-efi 6.0.0",
  "rand_core 0.10.1",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "graves"
+version = "0.10.1"
+dependencies = [
+ "mcsv-common",
+ "pumpkin-plugin-api",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -1559,7 +1611,7 @@ dependencies = [
 
 [[package]]
 name = "imagemap"
-version = "0.9.0"
+version = "0.10.1"
 dependencies = [
  "jpeg-decoder",
  "mcsv-common",
@@ -1682,6 +1734,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "jobs"
+version = "0.10.1"
+dependencies = [
+ "mcsv-common",
+ "pumpkin-plugin-api",
+ "serde",
+ "serde_json",
+ "toml 0.8.23",
+]
+
+[[package]]
 name = "jpeg-decoder"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1769,7 +1832,7 @@ checksum = "5d15f86d12da44cd8d4ec3c73984537eb7f4cadcb9776a575a0a8a05ca11005c"
 
 [[package]]
 name = "login"
-version = "0.9.0"
+version = "0.10.1"
 dependencies = [
  "argon2",
  "getrandom 0.3.4",
@@ -1798,6 +1861,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "373f5eceeeab7925e0c1098212f2fbc4d416adec9d35051a6ab251e824c1854a"
 
 [[package]]
+name = "market"
+version = "0.10.1"
+dependencies = [
+ "mcsv-common",
+ "pumpkin-plugin-api",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "matchers"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1814,7 +1887,7 @@ checksum = "47e1ffaa40ddd1f3ed91f717a33c8c0ee23fff369e3aa8772b9605cc1d22f4c3"
 
 [[package]]
 name = "mcbot"
-version = "0.9.0"
+version = "0.10.1"
 dependencies = [
  "flate2",
  "pumpkin-data",
@@ -1822,7 +1895,7 @@ dependencies = [
 
 [[package]]
 name = "mcsv-common"
-version = "0.9.0"
+version = "0.10.1"
 dependencies = [
  "pumpkin-plugin-api",
  "serde",
@@ -1834,7 +1907,7 @@ dependencies = [
 
 [[package]]
 name = "mcsv-pack"
-version = "0.9.0"
+version = "0.10.1"
 dependencies = [
  "miniz_oxide 0.8.9",
  "serde_json",
@@ -1842,7 +1915,7 @@ dependencies = [
 
 [[package]]
 name = "mcsv-web"
-version = "0.9.0"
+version = "0.10.1"
 
 [[package]]
 name = "md-5"
@@ -1921,7 +1994,7 @@ dependencies = [
 
 [[package]]
 name = "mobs"
-version = "0.9.0"
+version = "0.10.1"
 dependencies = [
  "mcsv-common",
  "pumpkin-plugin-api",
@@ -1932,7 +2005,7 @@ dependencies = [
 
 [[package]]
 name = "models"
-version = "0.9.0"
+version = "0.10.1"
 dependencies = [
  "mcsv-common",
  "mcsv-pack",
@@ -1945,7 +2018,7 @@ dependencies = [
 
 [[package]]
 name = "monitor"
-version = "0.9.0"
+version = "0.10.1"
 dependencies = [
  "mcsv-common",
  "pumpkin-plugin-api",
@@ -1956,7 +2029,7 @@ dependencies = [
 
 [[package]]
 name = "motd"
-version = "0.9.0"
+version = "0.10.1"
 dependencies = [
  "mcsv-common",
  "pumpkin-plugin-api",
@@ -2034,6 +2107,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8c491a384baf9fec20df565cdb8138a12809d4c7439763b566eb8114c5d59979"
 dependencies = [
  "bitflags 2.13.2",
+]
+
+[[package]]
+name = "npcs"
+version = "0.10.1"
+dependencies = [
+ "mcsv-common",
+ "pumpkin-plugin-api",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -2237,11 +2320,22 @@ checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 
 [[package]]
 name = "perms"
-version = "0.9.0"
+version = "0.10.1"
 dependencies = [
  "mcsv-common",
  "pumpkin-plugin-api",
  "regex-lite",
+ "serde",
+ "serde_json",
+ "toml 0.8.23",
+]
+
+[[package]]
+name = "pets"
+version = "0.10.1"
+dependencies = [
+ "mcsv-common",
+ "pumpkin-plugin-api",
  "serde",
  "serde_json",
  "toml 0.8.23",
@@ -2318,7 +2412,7 @@ dependencies = [
 
 [[package]]
 name = "placeholders"
-version = "0.9.0"
+version = "0.10.1"
 dependencies = [
  "mcsv-common",
  "pumpkin-plugin-api",
@@ -2391,7 +2485,7 @@ dependencies = [
 
 [[package]]
 name = "pregen"
-version = "0.9.0"
+version = "0.10.1"
 dependencies = [
  "libc",
  "pumpkin-api-macros",
@@ -2786,6 +2880,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "quests"
+version = "0.10.1"
+dependencies = [
+ "mcsv-common",
+ "pumpkin-plugin-api",
+ "serde",
+ "serde_json",
+ "toml 0.8.23",
+]
+
+[[package]]
 name = "quinn-udp"
 version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2950,6 +3055,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
 
 [[package]]
+name = "regions"
+version = "0.10.1"
+dependencies = [
+ "mcsv-common",
+ "pumpkin-plugin-api",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "rend"
 version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2998,7 +3113,18 @@ dependencies = [
 
 [[package]]
 name = "resourcepack"
-version = "0.9.0"
+version = "0.10.1"
+dependencies = [
+ "mcsv-common",
+ "pumpkin-plugin-api",
+ "serde",
+ "serde_json",
+ "toml 0.8.23",
+]
+
+[[package]]
+name = "rewards"
+version = "0.10.1"
 dependencies = [
  "mcsv-common",
  "pumpkin-plugin-api",
@@ -3499,7 +3625,7 @@ checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 
 [[package]]
 name = "scripts"
-version = "0.9.0"
+version = "0.10.1"
 dependencies = [
  "mcsv-common",
  "pumpkin-plugin-api",
@@ -3732,8 +3858,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "33f4fe9184a62d842c9ef383018f3306d8ba224fd9d836f56d7288308847c256"
 
 [[package]]
+name = "skills"
+version = "0.10.1"
+dependencies = [
+ "mcsv-common",
+ "pumpkin-plugin-api",
+ "serde",
+ "serde_json",
+ "toml 0.8.23",
+]
+
+[[package]]
 name = "skins"
-version = "0.9.0"
+version = "0.10.1"
 dependencies = [
  "mcsv-common",
  "pumpkin-plugin-api",
@@ -3888,7 +4025,7 @@ dependencies = [
 
 [[package]]
 name = "tablist"
-version = "0.9.0"
+version = "0.10.1"
 dependencies = [
  "mcsv-common",
  "pumpkin-plugin-api",
@@ -4361,10 +4498,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "veinminer"
+version = "0.10.1"
+dependencies = [
+ "mcsv-common",
+ "pumpkin-plugin-api",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "version_check"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
+
+[[package]]
+name = "voice"
+version = "0.10.1"
+dependencies = [
+ "hmac 0.12.1",
+ "mcsv-common",
+ "pumpkin-plugin-api",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+]
 
 [[package]]
 name = "walkdir"
@@ -4876,7 +5035,7 @@ dependencies = [
 
 [[package]]
 name = "worldmap"
-version = "0.9.0"
+version = "0.10.1"
 dependencies = [
  "mcsv-common",
  "mcsv-web",
@@ -4889,7 +5048,7 @@ dependencies = [
 
 [[package]]
 name = "worldtools"
-version = "0.9.0"
+version = "0.10.1"
 dependencies = [
  "mcsv-common",
  "miniz_oxide 0.8.9",

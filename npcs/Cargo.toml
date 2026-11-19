@@ -1,0 +1,20 @@
+[package]
+name = "npcs"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "NPCs that stand, look, walk and do things when clicked, for Pumpkin by MCSV (Citizens style)"
+
+# WASM component plugin: build with `cargo build --release --target wasm32-wasip2 -p npcs`.
+# Draws models of the Models plugin and offers quests of the Quests plugin when those are installed.
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+
+[target.'cfg(target_family = "wasm")'.dependencies]
+pumpkin-plugin-api.workspace = true
+mcsv-common.workspace = true

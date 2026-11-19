@@ -13,6 +13,8 @@
 //!   (block coordinates accept `~` and `~N`, relative to the block the bot stands in)
 //!   click <slot> [button] [mode]  (in the window the server opened)   closewin
 //!   useitem [yaw] [pitch]  (right click into the air with the held item; pitch 90 = down)
+//!   dialog <id>  (press a dialog button that sends that custom click)   input <flags>  (keys held)
+//!   respawn  (after a death)
 //!   interact <entity id | type=N>   (right click an entity; ids come from the `ENTITY <id>
 //!   type=<n>` lines, `type=N` means the newest entity of that type)   attack <same>
 //! `MCBOT_FIND=a,b` prints `FOUND <text> in <packet>` for every play packet that carries one of
@@ -806,6 +808,28 @@ fn main() {
                     let _ = conn.lock().unwrap().send(sb::play::SWING.0, &[0]);
                     println!("ATTACKED {eid}");
                 }
+            }
+            "dialog" => {
+                // dialog <id>: press a dialog button whose action is a custom click with that id
+                let mut b = Vec::new();
+                put_str(&mut b, rest.trim());
+                b.push(0); // no payload
+                let _ = conn.lock().unwrap().send(sb::play::CUSTOM_CLICK_ACTION.0, &b);
+                println!("DIALOGCLICK {}", rest.trim());
+            }
+            "respawn" => {
+                // respawn: press "Respawn" on the death screen (client command 0)
+                let mut b = Vec::new();
+                put_varint(&mut b, 0);
+                let _ = conn.lock().unwrap().send(sb::play::CLIENT_COMMAND.0, &b);
+                println!("RESPAWNING");
+            }
+            "input" => {
+                // input <flags>: the keys held (1 forward, 2 back, 4 left, 8 right, 16 jump,
+                // 32 sneak, 64 sprint); `input 0` lets go of everything
+                let flags: u8 = rest.trim().parse().unwrap_or(0);
+                let _ = conn.lock().unwrap().send(sb::play::PLAYER_INPUT.0, &[flags]);
+                println!("INPUT {flags}");
             }
             "closewin" => {
                 let (wid, _) = *window.lock().unwrap();

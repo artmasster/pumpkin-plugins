@@ -2257,10 +2257,12 @@ impl Plugin for Models {
         context.register_event_handler(OnRespawn, EventPriority::Lowest, false)?;
         context.register_event_handler(OnWorld, EventPriority::Lowest, false)?;
         context.schedule_repeating_task(1, 1, on_tick);
+        c::mark_running(VERSION);
         Ok(())
     }
 
     fn on_unload(&self, _context: Context) -> Result<(), String> {
+        c::mark_stopped();
         // Nothing of ours stays in the world: a display's item is not saved, so what stayed
         // would come back as an empty entity
         if let Ok(mut guard) = STATE.lock()

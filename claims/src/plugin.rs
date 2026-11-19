@@ -836,6 +836,35 @@ impl Plugin for Claims {
         Ok(())
     }
 
+    /// Other plugins ask before they change the world for a player (furniture, graves):
+    /// `{"kind":"may","player":<uuid hex>,"name":<name>,"world":<dimension>,"x","z","need":
+    /// "build"|"container"|"access"}` answers `{"ok":true,"allowed":bool,"owner":<name or null>}`.
+    /// Nothing is said to the player; the asker does that.
+    fn handle_ipc_message(&self, _sender: String, message: Vec<u8>) -> Result<Vec<u8>, String> {
+        let v: serde_json::Value = serde_json::from_slice(&message).map_err(|e| e.to_string())?;
+        let text = |k: &str| v.get(k).and_then(serde_json::Value::as_str).unwrap_or_default();
+        if text("kind") != "may" {
+            return Err(format!("unknown kind {}", text("kind")));
+        }
+        let need = match text("need") {
+            "access" => land::ACCESS,
+            "container" => land::CONTAINER,
+            _ => land::BUILD,
+        };
+        let (Some(x), Some(z)) = (v.get("x").and_then(serde_json::Value::as_f64), v.get("z").and_then(serde_json::Value::as_f64)) else { return Err("x and z are missing".into()) };
+        let guard = try_lock().ok_or("busy")?;
+        let st = guard.as_ref().ok_or("not loaded")?;
+        let player = text("player").replace('-', "").to_ascii_lowercase();
+        let answer = match st.book.at(text("world"), x.floor() as i32, z.floor() as i32) {
+            None => serde_json::json!({ "ok": true, "allowed": true, "owner": null }),
+            Some(cl) => {
+                let allowed = st.ignoring.contains(&player) || cl.level_of(&player, &text("name").to_lowercase()) >= need;
+                serde_json::json!({ "ok": true, "allowed": allowed, "owner": cl.owner_name })
+            }
+        };
+        serde_json::to_vec(&answer).map_err(|e| e.to_string())
+    }
+
     fn on_unload(&self, _context: Context) -> Result<(), String> {
         if let Some(st) = try_lock().as_mut().and_then(|g| g.as_mut()) {
             save(st);

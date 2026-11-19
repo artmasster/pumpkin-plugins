@@ -45,6 +45,23 @@ WASM_PLUGINS=(
   "customitems|CustomItems|fs.read.data fs.write.data network.tcp.bind|customitems version;customitems list 1;customitems give Nobody ruby 2;customitems pack;customitems pack send Nobody;customitems glyphs;customitems reload;citems info;craft"
   "models|Models|fs.read.data fs.write.data network.tcp.bind|models version;models list;models info example;models info;models pack;models pack send Nobody;models near;models play 1 idle loop;models stat;models sweep;models reload;model list"
   "mobs|Mobs|fs.read.data fs.write.data|mobs version;mobs list;mobs info;mobs info nobody;mobs spawn nobody;mobs near;mobs killall;mobs spawner list;mobs spawner remove nope;mobs stat;mobs reload;mob list"
+  "cosmetics|Cosmetics|fs.read.data fs.write.data|cosmetics version;cosmetics list;cosmetics info;cosmetics wear nope Nobody;cosmetics remove all Nobody;cosmetics reload;wardrobe"
+  "crops|Crops|fs.read.data fs.write.data|crops version;crops list;crops info;crops near;crops grow 5;crops reload;crop"
+  "npcs|Npcs|fs.read.data fs.write.data|npc version;npc list;npc info;npc create smoke;npc select nope;npc reload;npctalk nope 0"
+  "furniture|Furniture|fs.read.data fs.write.data|furniture version;furniture list;furniture info stool;furniture give Nobody stool;furniture reload"
+  "crates|Crates|fs.read.data fs.write.data|crates version;crates list;crates info basic;crates key Nobody basic 1;crates preview basic;crates set basic;crates reload"
+  "pets|Pets|fs.read.data fs.write.data|pets version;pets list;pets call dog;pets name x;pets reload;pet"
+  "jobs|Jobs|fs.read.data fs.write.data|jobs version;jobs info miner;jobs top;jobs stats Nobody;jobs setlevel Nobody miner 5;jobs join miner;jobs reload"
+  "quests|Quests|fs.read.data fs.write.data|quests version;quests list;quests reset Nobody;quests complete Nobody first;quests abandon x;quests reload"
+  "market|Market|fs.read.data fs.write.data|market version;market info;market sell 100;market mine;market remove 1;market reload;ah"
+  "graves|Graves|fs.read.data fs.write.data|graves version;graves list;graves list all;graves tp 1;graves remove 1;graves reload"
+  "rewards|Rewards|fs.read.data fs.write.data|daily version;daily claim;daily playtime;daily reset Nobody;daily reload;rewards"
+  "skills|Skills|fs.read.data fs.write.data|skills version;skills top;skills stats Nobody;skills setlevel Nobody mining 5;skills reload"
+  "clans|Clans|fs.read.data fs.write.data|clan version;clan list;clan info NOPE;clan create TEST Test;clan delete NOPE;clan reload;cc hello"
+  "veinminer|VeinMiner|fs.read.data fs.write.data|veinminer version;veinminer reload;veinminer;vm"
+  "regions|Regions|fs.read.data fs.write.data|rg version;rg list;rg info __global__;rg flag __global__ pvp deny;rg flag __global__ pvp;rg priority x 1;rg remove x;rg reload"
+  "chatguard|ChatGuard|fs.read.data fs.write.data|chatguard version;chatguard test hello there;chatguard test fuck you;chatguard reload"
+  "voice|Voice|fs.read.data fs.write.data network.udp network.dns|voice status;voice 123456;voicemute Nobody;voiceunmute Nobody;voice"
 )
 
 cd "$ROOT"
@@ -72,6 +89,12 @@ SO="$ROOT/target/release/libpregen.so"
 test -s "$SO"
 for id in "${IDS[@]}"; do
   test -s "$ROOT/target/wasm32-wasip2/release/$id.wasm" || { echo "$id.wasm was not built" >&2; exit 1; }
+done
+# The panel shows a plugin as running only while it keeps plugins/data/<id>/status.json
+# (c::mark_running in on_load); Models, Mobs and the 0.10.0 set first shipped without it
+for id in "${IDS[@]}"; do
+  src="$ROOT/$id/src"; [ -d "$src" ] || src="$ROOT/$id-plugin/src"
+  grep -rqE 'mark_running|"status\.json"' "$src" || { echo "$id never writes status.json (c::mark_running): the panel would show it as waiting for a restart" >&2; exit 1; }
 done
 
 # The Pumpkin release this tag ships, checked against its own checksums

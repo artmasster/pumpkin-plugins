@@ -311,35 +311,16 @@ pub fn accrue(cfg: &Config, ledger: &mut Ledger) {
     ledger.accrued = (ledger.accrued + f64::from(cfg.blocks_per_hour) / 60.0).min(f64::from(cfg.max_accrued));
 }
 
-fn has_word(name: &str, words: &[&str]) -> bool {
-    words.iter().any(|w| name.contains(w))
-}
-
 /// Trust needed to right-click this block on someone's land (0 = anyone).
 pub fn block_needs(block: &str) -> u8 {
-    let b = short(block);
-    if has_word(b, &["chest", "barrel", "shulker_box", "furnace", "smoker", "hopper", "dispenser", "dropper", "brewing_stand", "lectern", "bookshelf", "crafter", "decorated_pot", "jukebox", "campfire", "beehive", "bee_nest", "composter", "cauldron", "anvil", "beacon", "flower_pot", "vault"]) {
-        return CONTAINER;
+    match crate::names::block_use(block) {
+        2 => CONTAINER,
+        1 => ACCESS,
+        _ => 0,
     }
-    if has_word(b, &["door", "fence_gate", "button", "lever", "_bed", "bell", "note_block", "repeater", "comparator", "daylight_detector", "respawn_anchor", "cake", "candle"]) {
-        return ACCESS;
-    }
-    0
 }
 
-/// Holding this, a right click can change the world without placing a block (strip, till, burn, spawn).
-pub fn item_changes_world(item: &str) -> bool {
-    let i = short(item);
-    i.ends_with("_axe")
-        || i.ends_with("_hoe")
-        || i.ends_with("_shovel")
-        || i.ends_with("_spawn_egg")
-        || i.ends_with("minecart")
-        || i.ends_with("_boat")
-        || i.ends_with("_raft")
-        || i.ends_with("_dye")
-        || matches!(i, "bone_meal" | "flint_and_steel" | "fire_charge" | "shears" | "armor_stand" | "item_frame" | "glow_item_frame" | "painting" | "end_crystal" | "lead" | "honeycomb" | "brush" | "glass_bottle" | "ink_sac" | "glow_ink_sac")
-}
+pub use crate::names::{is_bucket, item_changes_world};
 
 /// Monsters: anyone may fight them anywhere.
 const HOSTILE: &[&str] = &[
@@ -381,13 +362,6 @@ pub fn snake(name: &str) -> String {
         }
     }
     out
-}
-
-/// A bucket pours next to the block it is used on, and Pumpkin 0.2.2 ignores a cancelled
-/// `PlayerBucketEmptyEvent`: the right click itself has to be refused, one block around.
-pub fn is_bucket(item: &str) -> bool {
-    let i = short(item);
-    i == "bucket" || i.ends_with("_bucket")
 }
 
 /// Positions to light up so a player sees a claim: the corners and a mark every ten blocks.

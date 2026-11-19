@@ -163,6 +163,23 @@ pub(crate) fn on_chat(st: &mut State, server: &Server, p: &Player, message: &str
     if format.trim().is_empty() {
         return false;
     }
+    // A chat filter (ChatGuard) may change or stop the line first; nothing happens when it is
+    // not installed (no answer = the line as it is)
+    let ask = serde_json::json!({ "kind": "check", "player": k, "name": p.get_name(), "message": message, "staff": p.has_permission("chatguard:bypass") });
+    let filtered: String;
+    let message = match c::ipc("chatguard", &ask) {
+        Some(v) if v.get("send").and_then(serde_json::Value::as_bool) == Some(false) => {
+            if let Some(notice) = v.get("notice").and_then(serde_json::Value::as_str) {
+                c::tell(p, notice);
+            }
+            return true;
+        }
+        Some(v) => {
+            filtered = v.get("message").and_then(serde_json::Value::as_str).unwrap_or(message).to_owned();
+            filtered.as_str()
+        }
+        None => message,
+    };
     let group = st.ranks.group_of(d.group.as_deref()).to_owned();
     let (prefix, suffix) = c::perms_decor(p).unwrap_or_else(|| {
         let (a, b) = st.ranks.decor(&group);

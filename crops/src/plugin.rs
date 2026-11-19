@@ -1055,10 +1055,12 @@ impl Plugin for Crops {
         context.register_event_handler(OnPlace, EventPriority::Normal, true)?;
         context.register_event_handler(OnMoisture, EventPriority::Normal, true)?;
         context.schedule_repeating_task(1, 1, on_tick);
+        c::mark_running(VERSION);
         Ok(())
     }
 
     fn on_unload(&self, _context: Context) -> Result<(), String> {
+        c::mark_stopped();
         if let Ok(mut guard) = STATE.lock()
             && let Some(st) = guard.as_mut()
         {

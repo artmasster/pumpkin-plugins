@@ -1072,10 +1072,12 @@ impl Plugin for Mobs {
         context.register_event_handler(OnHurt, EventPriority::Lowest, false)?;
         context.register_event_handler(OnDeath, EventPriority::Normal, true)?;
         context.schedule_repeating_task(1, 1, on_tick);
+        c::mark_running(VERSION);
         Ok(())
     }
 
     fn on_unload(&self, _context: Context) -> Result<(), String> {
+        c::mark_stopped();
         if let Ok(mut guard) = STATE.lock()
             && let Some(st) = guard.as_mut()
         {

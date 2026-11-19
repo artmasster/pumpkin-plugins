@@ -1,0 +1,19 @@
+[package]
+name = "clans"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Clans with tags, ranks, a home and their own chat, for Pumpkin by MCSV (SimpleClans style)"
+
+# WASM component plugin: build with `cargo build --release --target wasm32-wasip2 -p clans`.
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+
+[target.'cfg(target_family = "wasm")'.dependencies]
+pumpkin-plugin-api.workspace = true
+mcsv-common.workspace = true

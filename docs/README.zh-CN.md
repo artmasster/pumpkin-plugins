@@ -1,11 +1,11 @@
 <p align="center">
-  <a href="https://pk-plugin.mcsv.me/"><img src="../site/og.jpg" alt="21 个用 Rust 编写的 PumpkinMC 插件，可替代 LuckPerms、EssentialsX、WorldEdit 等" width="900"></a>
+  <a href="https://pk-plugin.mcsv.me/"><img src="../site/og.jpg" alt="37 个用 Rust 编写的 PumpkinMC 插件，可替代 LuckPerms、EssentialsX、WorldEdit 等" width="900"></a>
 </p>
 
 <h1 align="center">MCSV Pumpkin plugins</h1>
 
 <p align="center">
-  为 <a href="https://github.com/Pumpkin-MC/Pumpkin">Pumpkin</a>（用 Rust 编写的 Minecraft Java 服务器）制作的 21 个插件。
+  为 <a href="https://github.com/Pumpkin-MC/Pumpkin">Pumpkin</a>（用 Rust 编写的 Minecraft Java 服务器）制作的 37 个插件。
 </p>
 
 <p align="center">
@@ -58,6 +58,22 @@ Paper 和 Spigot 的 `.jar` 插件无法在 Pumpkin 上运行，因此这里的�
 | <img src="../site/img/customitems.webp" alt="" width="40"> | `customitems` | Oraxen / ItemsAdder / Nexo | 用几行配置和一张图片做出外观独特的物品：自行生成并发送资源包，自带合成界面，以及可输入任意文本的字形 | `/craft` · 管理员 `/customitems` `/customitems give` `/customitems reload` |
 | <img src="../site/img/models.webp" alt="" width="40"> | `models` | ModelEngine | 用 Blockbench（`.bbmodel`）制作的动画模型：放在世界中、装到生物上或由玩家穿戴，插件自行生成并发送资源包，并为其他插件提供消息接口 | `/models place` `/models attach` `/models play` `/models list` |
 | <img src="../site/img/mobs.webp" alt="" width="40"> | `mobs` | MythicMobs | 用几行配置做出自定义生物：生命、伤害、速度、体型、行为、装备、定时或受伤时触发的技能、掉落物、Boss 血条和刷怪点；安装 Models 后可以穿上模型 | `/mobs spawn` `/mobs spawner add` `/mobs list` `/mobs near` |
+| <img src="../site/img/regions.webp" alt="" width="40"> | `regions` | WorldGuard | 管理员区域（方块范围，加上每个世界的 `__global__`）及标志：建造、交互、PvP、生物伤害与生成、爆炸、火势蔓延、进入、丢弃物品、摔落伤害、无敌、饥饿、进入与离开提示；支持优先级、成员和所有者 | `/rg pos1` `/rg pos2` `/rg define` `/rg flag` `/rg addmember` `/rg list` |
+| <img src="../site/img/chatguard.webp" alt="" width="40"> | `chatguard` | ChatControl | 识破用空格、句点、重复字母、数字代替字母和泰语声调符号伪装的泰语与英语脏话，并打码或拦截；拦截 IP 和域名广告（`allowed-domains` 除外）、刷屏、重复、喊叫和告示牌，累计次数后处罚 | `/chatguard test <文本>` `/chatguard reload` |
+| <img src="../site/img/npcs.webp" alt="" width="40"> | `npcs` | Citizens | NPC 可以是游戏中的生物（无 AI、不会受伤、无声）或穿上 Models 的模型；会转向玩家、沿路线行走，右键时发送消息、执行命令、打开对话、提供任务或传送。对话是带按钮的聊天消息 | `/npc create` `/npc select` `/npc action` `/npc dialog` `/npc path` `/npc list` |
+| <img src="../site/img/furniture.webp" alt="" width="40"> | `furniture` | ItemsAdder / Nexo 家具 | 用物品（CustomItems 或游戏原版）放置的家具，按玩家朝向分 4、8 或 16 个方向；可坐、可有碰撞体积，打一下即可收回；遵守 Claims 的领地 | `/furniture give` `/furniture list` `/furniture info` `/furniture reload` |
+| <img src="../site/img/cosmetics.webp" alt="" width="40"> | `cosmetics` | HMCCosmetics | 衣柜：帽子、背饰和跟随的漂浮物（可选是否带拴绳），由 Models 的模型或物品模型（例如 CustomItems 的物品）制作；帽子放在真正的头盔栏位，并让位于盔甲。需要 Models | `/cosmetics` (`/wardrobe`) `/cosmetics wear` `/cosmetics remove` |
+| <img src="../site/img/crops.webp" alt="" width="40"> | `crops` | CustomCrops | 自定义作物：在耕地上种下种子，随时间分阶段生长（可设为只在湿润时生长），支持骨粉、收获和补种；安装后可使用 CustomItems 的物品和 Models 的模型 | `/crops list` `/crops info` `/crops near` `/crops reload` |
+| <img src="../site/img/jobs.webp" alt="" width="40"> | `jobs` | Jobs Reborn | 通过挖掘、放置、击杀、钓鱼、合成、冶炼、进食和驯服赚取金钱（经由 Basics）和经验的职业，等级越高收入越多，每隔几秒统一发放 | `/jobs` `/jobs join` `/jobs leave` `/jobs stats` `/jobs top` |
+| <img src="../site/img/quests.webp" alt="" width="40"> | `quests` | Quests / BetonQuest | 带目标（与 Jobs 相同的行为、与 NPC 对话、上交物品）和物品、金钱或命令奖励的任务，支持前置条件、冷却或重复；可在界面或 NPC 处接取 | `/quests` `/quests accept` `/quests abandon` `/quests list` |
+| <img src="../site/img/skills.webp" alt="" width="40"> | `skills` | mcMMO / AuraSkills | 随行为升级的技能：双倍掉落直接进背包、每级额外伤害，以及排行榜和总战力 | `/skills` `/skills stats` `/skills top` |
+| <img src="../site/img/clans.webp" alt="" width="40"> | `clans` | SimpleClans | 带标签和职位（首领、副手、成员）的公会：通过聊天按钮邀请，公会聊天、公会传送点、禁止误伤队友，提供 `%clans_tag%` | `/clan create` `/clan invite` `/clan home` `/cc` `/clan list` |
+| <img src="../site/img/market.webp" alt="" width="40"> | `market` | AuctionHouse | 玩家上架手中的物品，在确认界面购买；卖家获得扣除 `sales-tax` 后的金额，可设 `listing-fee`，过期物品退回领取箱 | `/market` `/market sell <价格>` `/market mine` `/market box` (`/ah`) |
+| <img src="../site/img/crates.webp" alt="" width="40"> | `crates` | CrazyCrates | 用钥匙开启的箱子方块：界面滚动后按权重停在奖品上，左键查看奖品与概率，带浮动标签和有开箱动画的模型 | `/crates set` `/crates key` `/crates preview` `/crates list` |
+| <img src="../site/img/rewards.webp" alt="" width="40"> | `rewards` | DailyRewards / PlaytimeRewards | 连续签到的每日奖励（断一天就重新开始）、在线时长奖励，进服时提醒并附领取按钮，日期按 `utc-offset` 计算 | `/daily` `/daily claim` `/daily playtime` |
+| <img src="../site/img/pets.webp" alt="" width="40"> | `pets` | MyPet | 会跟随（距离太远时传送过来）的宠物，不会受伤，可以骑乘并用玩家按键操控，可以取名，还能穿上 Models 的模型 | `/pets` `/pets call` `/pets dismiss` `/pets name` |
+| <img src="../site/img/graves.webp" alt="" width="40"> | `graves` | GravesX | 死亡时 36 格物品、盔甲和副手物品进入死亡地点的坟墓；主人可原位取回全部物品，其他人在 `public-minutes` 后可以打开，`expire-minutes` 后坟墓消失 | `/graves` `/graves list all` `/graves tp` |
+| <img src="../site/img/veinminer.webp" alt="" width="40"> | `veinminer` | VeinMiner / TreeCapitator | 潜行并用正确的工具即可一次挖完整条矿脉或砍倒整棵树，最多 `max-blocks` 个；掉落物进背包，工具按方块消耗并在损坏前停止；跳过已被圈占的土地 | `/veinminer`（为自己开启或关闭） |
 | <img src="../site/img/pregen.webp" alt="" width="40"> | `pregen` | Chunky | 预生成世界；可暂停、继续，重启后也能接着生成 | `/pregen start` `/pregen pause` `/pregen continue` (`/chunky`) |
 
 LuckPerms、WorldEdit、CoreProtect 等名称属于各自的项目，这里提及它们只是为了说明每个插件承担的工作。这些插件与上述项目没有关联，也未获得其认可。
@@ -68,7 +84,7 @@ LuckPerms、WorldEdit、CoreProtect 等名称属于各自的项目，这里提�
 
 ## 安装
 
-其中 20 个插件是 WASM 组件（`<id>.wasm`），在 Pumpkin 的沙箱中运行。`pregen` 是原生库（`libpregen.so`，Linux x86-64），因为 Pumpkin 的 WASM API 无法加载或生成区块。
+其中 36 个插件是 WASM 组件（`<id>.wasm`），在 Pumpkin 的沙箱中运行。`pregen` 是原生库（`libpregen.so`，Linux x86-64），因为 Pumpkin 的 WASM API 无法加载或生成区块。
 
 1. 把文件放进服务器的 `plugins/` 文件夹。
 2. WASM 插件需要在 `pumpkin.toml` 中授予沙箱权限，否则服务器每次启动都会在控制台询问：
@@ -99,7 +115,8 @@ LuckPerms、WorldEdit、CoreProtect 等名称属于各自的项目，这里提�
 - **CustomItems。** 在 `plugins/data/customitems/items/*.toml` 中描述物品，把图片放进 `textures/`，其他资源包文件放进 `pack/`；`/customitems reload` 会生成 `pack.zip`。插件知道文件位置后玩家才能拿到它：把 `pack.url` 设为你托管文件的链接，或设置 `pack.port` 和 `pack.host` 让插件自己提供下载。配方在插件自己的界面（`/craft`）中制作，原料可以是游戏物品和其他自定义物品：Pumpkin 0.2.2 的工作台只保留配方结果的种类和数量，无法给出自定义物品。物品只在 Java 客户端中显示设计的外观；方块和家具尚未支持。
 - **Models。** 把 Blockbench 项目（`.bbmodel`，图片保存在文件内）放进 `plugins/data/models/models/`，然后运行 `/models reload`；首次启动会写入一个示例，可用 `/models place example` 试试。每组方块会成为一个 item display；名为 `idle`、`walk`、`hurt`、`death` 的动画会自动播放，名为 `h_...` 的组会跟随生物视线转动，`tag_...` 是显示名字的位置，名为 `hitbox` 的方块是可点击的部分。以游戏模型文件无法保存的方式旋转的方块会拆成独立部件；网格（mesh）不会被使用。玩家获取资源包的方式与 CustomItems 相同（`pack.url`，或 `pack.port` 和 `pack.host`），作为第二个资源包。用命令放到生物上的模型会一直存在，直到该生物被卸载；其他插件可以用 JSON 消息请求模型（表格位于 `models/src/plugin.rs` 中 `fn ipc` 的上方）。每移动一根骨骼大约花费服务器 6 微秒；可用 `config.toml` 中的 `update-interval`、`far-distance` 和 `max-updates-per-tick` 加以限制。
 - **Mobs。** 在 `plugins/data/mobs/mobs/*.toml` 中描述生物（首次启动会写入示例）：它基于哪种游戏生物、各项数值、用于替换行为的 `ai`、`hostile`、`equipment`、`drops`、来自 Models 插件的 `model`，以及包含 `on`（`spawn`、`hurt`、`death`、`timer <秒>`、`health <百分比>`）和要执行的 `do` 列表（`message`、`sound`、`particle`、`damage`、`heal`、`effect`、`summon`、`leap`、`ignite`、`teleport`、`animation`、`command`）的 `skills`。`/mobs spawn <mob>` 生成一只，`/mobs spawner add <名称> <mob>` 会在有玩家靠近时保持该地点有生物。生物在 `despawn-range` 范围内有玩家时存在，不会在重启后保留；刷怪点会保留。Pumpkin 0.2.2 不告知是谁伤害了生物，所以掉落物会直接进入最后一次被击中时离该生物最近的玩家的背包（`customitems:<id>` 给出 CustomItems 的物品），生物本身的掉落物仍会掉在地上。
-- **插件之间可以互相配合**（一起安装时）：Basics 的聊天会传到 DiscordLink 和 BlockLog，Placeholders 从 Basics 读取余额、从 Perms 读取前缀，WorldTools 的编辑会被 BlockLog 记录，在 Login 放行之前所有插件都不会处理该玩家。
+- **玩法类插件。** Npcs、Furniture、Crates、Pets、Jobs、Quests、Market、Graves、Rewards、Skills、Clans、VeinMiner、Regions、ChatGuard、Cosmetics 和 Crops 首次启动时会在 `plugins/data/<id>/` 写入带注释的配置或示例；金钱使用 Basics。Pumpkin 0.2.2 的限制：插件发送的对话界面到不了客户端，所以 NPC 对话是带按钮的聊天消息；事件给出的是箭而不是射手，所以用弓击杀不计入 Jobs、Quests 和 Skills；VeinMiner 额外挖掉的方块不触发事件，所以 Jobs、Skills 和 BlockLog 看不到，也不计算时运；插件无法把物品掉到地上，所以 VeinMiner、Crops 和各种奖励的物品直接进背包。这 16 个插件已通过测试机器人和控制台测试，但还没有玩家在真实游戏客户端中玩过。
+- **插件之间可以互相配合**（一起安装时）：Basics 的聊天会传到 DiscordLink 和 BlockLog，并先经过 ChatGuard 检查；Placeholders 从 Basics 读取余额、从 Perms 读取前缀、从 Clans 读取标签；WorldTools 的编辑会被 BlockLog 记录；Jobs、Quests 和 Skills 统计同一套行为；NPC 可以提供任务；Furniture、Crates、Cosmetics、Crops 和 Pets 使用 CustomItems 的物品和 Models 的模型；Furniture 和 VeinMiner 遵守 Claims 的领地；在 Login 放行之前所有插件都不会处理该玩家。
 
 ## 构建
 

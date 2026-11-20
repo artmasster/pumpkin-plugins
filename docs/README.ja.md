@@ -1,11 +1,11 @@
 <p align="center">
-  <a href="https://pk-plugin.mcsv.me/"><img src="../site/og.jpg" alt="Rust で書かれた PumpkinMC 用の 21 個のプラグイン。LuckPerms、EssentialsX、WorldEdit などの代わりに" width="900"></a>
+  <a href="https://pk-plugin.mcsv.me/"><img src="../site/og.jpg" alt="Rust で書かれた PumpkinMC 用の 37 個のプラグイン。LuckPerms、EssentialsX、WorldEdit などの代わりに" width="900"></a>
 </p>
 
 <h1 align="center">MCSV Pumpkin plugins</h1>
 
 <p align="center">
-  Rust で書かれた Minecraft Java サーバー <a href="https://github.com/Pumpkin-MC/Pumpkin">Pumpkin</a> 用の 21 個のプラグインです。
+  Rust で書かれた Minecraft Java サーバー <a href="https://github.com/Pumpkin-MC/Pumpkin">Pumpkin</a> 用の 37 個のプラグインです。
 </p>
 
 <p align="center">
@@ -58,6 +58,22 @@ Paper や Spigot の `.jar` プラグインは Pumpkin では動きません。�
 | <img src="../site/img/customitems.webp" alt="" width="40"> | `customitems` | Oraxen / ItemsAdder / Nexo | 数行の設定と画像 1 枚で独自の見た目のアイテム：リソースパックを自分で作って送信し、クラフト画面と、どんな文章にも入力できるグリフを備えています | `/craft` · 管理者 `/customitems` `/customitems give` `/customitems reload` |
 | <img src="../site/img/models.webp" alt="" width="40"> | `models` | ModelEngine | Blockbench（`.bbmodel`）で作ったアニメーションモデル：ワールドに置く、生き物に付ける、プレイヤーが身に着ける。リソースパックはプラグインが作って送信し、ほかのプラグイン向けのメッセージ窓口もあります | `/models place` `/models attach` `/models play` `/models list` |
 | <img src="../site/img/mobs.webp" alt="" width="40"> | `mobs` | MythicMobs | 数行の設定でカスタム mob：体力、攻撃力、速さ、大きさ、行動、装備、時間経過や被ダメージで発動するスキル、ドロップ、ボスバー、スポナー。Models を入れるとモデルを着せられます | `/mobs spawn` `/mobs spawner add` `/mobs list` `/mobs near` |
+| <img src="../site/img/regions.webp" alt="" width="40"> | `regions` | WorldGuard | 管理者用の領域（ボックスと、ワールドごとの `__global__`）とフラグ：建築、操作、PvP、mob のダメージと出現、爆発、延焼、立ち入り、アイテムのドロップ、落下ダメージ、無敵、空腹、入退場メッセージ。優先度、メンバー、オーナー | `/rg pos1` `/rg pos2` `/rg define` `/rg flag` `/rg addmember` `/rg list` |
+| <img src="../site/img/chatguard.webp" alt="" width="40"> | `chatguard` | ChatControl | タイ語と英語の暴言を、空白、点、文字の繰り返し、数字への置き換え、タイ語の声調記号まで見抜いて伏せ字またはブロック。IP とドメインの宣伝（`allowed-domains` を除く）、連投、繰り返し、叫び、看板にも対応し、一定回数で罰則 | `/chatguard test <文章>` `/chatguard reload` |
+| <img src="../site/img/npcs.webp" alt="" width="40"> | `npcs` | Citizens | ゲームの生き物（AI なし、攻撃を受けない、無音）または Models のモデルを着た NPC。プレイヤーの方を向き、経路を歩き、右クリックでメッセージ、コマンド、会話、クエストの提示、テレポートを行います。会話はボタン付きのチャットです | `/npc create` `/npc select` `/npc action` `/npc dialog` `/npc path` `/npc list` |
+| <img src="../site/img/furniture.webp" alt="" width="40"> | `furniture` | ItemsAdder / Nexo の家具 | アイテム（CustomItems またはゲームのもの）から置く家具。プレイヤーの向きに合わせて 4、8、16 方向。座れる、当たり判定あり、叩くと回収。Claims の土地を尊重します | `/furniture give` `/furniture list` `/furniture info` `/furniture reload` |
+| <img src="../site/img/cosmetics.webp" alt="" width="40"> | `cosmetics` | HMCCosmetics | 帽子、背中のアイテム、ついてくる浮遊物（リードの有無を選べます）のクローゼット。Models のモデルや、CustomItems のアイテムなどのアイテムモデルから作ります。帽子は本物のヘルメット枠に入り、防具を優先します。Models が必要です | `/cosmetics` (`/wardrobe`) `/cosmetics wear` `/cosmetics remove` |
+| <img src="../site/img/crops.webp" alt="" width="40"> | `crops` | CustomCrops | カスタム作物：耕地に種を植えると時間とともに段階的に育ちます（水を条件にもできます）。骨粉、収穫、植え直しに対応。入っていれば CustomItems のアイテムと Models のモデルを使います | `/crops list` `/crops info` `/crops near` `/crops reload` |
+| <img src="../site/img/jobs.webp" alt="" width="40"> | `jobs` | Jobs Reborn | 採掘、設置、討伐、釣り、クラフト、精錬、食事、飼いならしでお金（Basics 経由）と経験値を得る職業。レベルが上がると報酬が増え、数秒ごとにまとめて支払われます | `/jobs` `/jobs join` `/jobs leave` `/jobs stats` `/jobs top` |
+| <img src="../site/img/quests.webp" alt="" width="40"> | `quests` | Quests / BetonQuest | 目標（Jobs と同じ行動、NPC との会話、アイテムの納品）と、アイテム、お金、コマンドの報酬を持つクエスト。前提条件、クールダウン、繰り返しに対応し、画面または NPC から受注します | `/quests` `/quests accept` `/quests abandon` `/quests list` |
+| <img src="../site/img/skills.webp" alt="" width="40"> | `skills` | mcMMO / AuraSkills | 行動でレベルが上がるスキル。インベントリに入るドロップ 2 倍、レベルごとの追加ダメージ、ランキングと総合力 | `/skills` `/skills stats` `/skills top` |
+| <img src="../site/img/clans.webp" alt="" width="40"> | `clans` | SimpleClans | タグと階級（リーダー、副リーダー、メンバー）のあるクラン。チャットのボタンで招待、クランチャット、クランホーム、同士討ち防止、`%clans_tag%` | `/clan create` `/clan invite` `/clan home` `/cc` `/clan list` |
+| <img src="../site/img/market.webp" alt="" width="40"> | `market` | AuctionHouse | 手に持ったアイテムを出品し、確認画面から購入。売り手には `sales-tax` を引いた額が支払われ、`listing-fee` も設定できます。期限切れの品はボックスに戻ります | `/market` `/market sell <価格>` `/market mine` `/market box` (`/ah`) |
+| <img src="../site/img/crates.webp" alt="" width="40"> | `crates` | CrazyCrates | 鍵で開けるクレートブロック。回転して重みに応じた景品で止まる画面、左クリックで確率付きの景品一覧、浮かぶラベル、開封アニメーション付きのモデル | `/crates set` `/crates key` `/crates preview` `/crates list` |
+| <img src="../site/img/rewards.webp" alt="" width="40"> | `rewards` | DailyRewards / PlaytimeRewards | 連続ログインのデイリー報酬（1 日空くと最初から）、プレイ時間の報酬、参加時の受け取りボタン付きのお知らせ。日付は `utc-offset` で数えます | `/daily` `/daily claim` `/daily playtime` |
+| <img src="../site/img/pets.webp" alt="" width="40"> | `pets` | MyPet | ついてくる（離れるとワープする）ペット。攻撃を受けず、プレイヤーのキー操作で乗って動かせ、名前を付けられ、Models のモデルを着せられます | `/pets` `/pets call` `/pets dismiss` `/pets name` |
+| <img src="../site/img/graves.webp" alt="" width="40"> | `graves` | GravesX | 死ぬと 36 スロット、防具、オフハンドがその場の墓に入ります。持ち主は同じスロットにすべて取り戻せ、ほかの人は `public-minutes` 後に開けられ、`expire-minutes` 後に消えます | `/graves` `/graves list all` `/graves tp` |
+| <img src="../site/img/veinminer.webp" alt="" width="40"> | `veinminer` | VeinMiner / TreeCapitator | しゃがんで正しい道具を使うと、鉱脈や木を `max-blocks` までまとめて掘る、または伐採。ドロップはインベントリへ入り、道具はブロックごとに消耗して壊れる前に止まります。保護された土地は対象外です | `/veinminer`（自分の有効と無効を切り替え） |
 | <img src="../site/img/pregen.webp" alt="" width="40"> | `pregen` | Chunky | ワールドを事前生成。一時停止、再開、再起動後の続行が可能 | `/pregen start` `/pregen pause` `/pregen continue` (`/chunky`) |
 
 LuckPerms、WorldEdit、CoreProtect などの名前はそれぞれのプロジェクトのものです。ここでは各プラグインの役割を示すためだけに挙げています。これらのプラグインは、それらのプロジェクトと関係がなく、公認も受けていません。
@@ -68,7 +84,7 @@ LuckPerms、WorldEdit、CoreProtect などの名前はそれぞれのプロジ�
 
 ## インストール
 
-20 個のプラグインは WASM コンポーネント（`<id>.wasm`）で、Pumpkin のサンドボックスで動きます。`pregen` はネイティブライブラリ（`libpregen.so`、Linux x86-64）です。Pumpkin の WASM API ではチャンクの読み込みや生成ができないためです。
+36 個のプラグインは WASM コンポーネント（`<id>.wasm`）で、Pumpkin のサンドボックスで動きます。`pregen` はネイティブライブラリ（`libpregen.so`、Linux x86-64）です。Pumpkin の WASM API ではチャンクの読み込みや生成ができないためです。
 
 1. ファイルをサーバーの `plugins/` フォルダーに置きます。
 2. WASM プラグインには `pumpkin.toml` でサンドボックスの権限を与える必要があります。与えないと、起動のたびにコンソールで確認されます：
@@ -99,7 +115,8 @@ LuckPerms、WorldEdit、CoreProtect などの名前はそれぞれのプロジ�
 - **CustomItems。** アイテムは `plugins/data/customitems/items/*.toml` に書き、画像は `textures/` に、その他のパック用ファイルは `pack/` に置きます。`/customitems reload` で `pack.zip` が作られます。プラグインがその場所を知っていれば、プレイヤーはパックを受け取れます。ファイルを置いたリンクを `pack.url` に設定するか、`pack.port` と `pack.host` を設定してプラグイン自身に配信させます。レシピはプラグインの画面（`/craft`）で、ゲームのアイテムやほかのカスタムアイテムから作ります。Pumpkin 0.2.2 の作業台はレシピの結果の種類と数しか保持せず、カスタムアイテムを出せないためです。意図した見た目になるのは Java クライアントだけで、ブロックと家具はまだありません。
 - **Models。** Blockbench のプロジェクト（`.bbmodel`、画像はファイル内に保存）を `plugins/data/models/models/` に置き、`/models reload` を実行します。初回起動時にサンプルが書き出されるので、`/models place example` で試せます。キューブのグループはそれぞれ 1 つの item display になります。`idle`、`walk`、`hurt`、`death` という名前のアニメーションは自動で再生され、`h_...` という名前のグループは生き物の視線に合わせて向き、`tag_...` は名前を表示する位置、`hitbox` という名前のキューブはクリックできる部分です。ゲームのモデルファイルで表せない向きに回転したキューブは独立した部品になり、メッシュは使われません。プレイヤーは CustomItems と同じ方法（`pack.url`、または `pack.port` と `pack.host`）で、2 つ目のパックとして受け取ります。コマンドで生き物に付けたモデルは、その生き物がアンロードされるまで残ります。ほかのプラグインは JSON メッセージでモデルを要求できます（表は `models/src/plugin.rs` の `fn ipc` の上にあります）。動くボーン 1 本あたりサーバーの負荷は約 6 マイクロ秒で、`config.toml` の `update-interval`、`far-distance`、`max-updates-per-tick` で上限を決められます。
 - **Mobs。** mob は `plugins/data/mobs/mobs/*.toml` に書きます（初回起動時にサンプルが書き出されます）。元になるゲームの生き物、各種の数値、行動を置き換える `ai`、`hostile`、`equipment`、`drops`、Models プラグインの `model`、そして `on`（`spawn`、`hurt`、`death`、`timer <秒>`、`health <パーセント>`）と実行する `do` の一覧（`message`、`sound`、`particle`、`damage`、`heal`、`effect`、`summon`、`leap`、`ignite`、`teleport`、`animation`、`command`）を持つ `skills` です。`/mobs spawn <mob>` で 1 体出し、`/mobs spawner add <名前> <mob>` でプレイヤーが近くにいる間その場所に mob を保ちます。mob は `despawn-range` 内にプレイヤーがいる間だけ存在し、再起動では引き継がれません。スポナーは引き継がれます。Pumpkin 0.2.2 は誰が生き物を攻撃したかを伝えないため、ドロップは最後に攻撃されたときに mob の最も近くにいたプレイヤーのインベントリに直接入ります（`customitems:<id>` で CustomItems のアイテムを渡せます）。生き物本来のドロップはそのまま落ちます。
-- **一緒に入れるとプラグイン同士が連携します。** Basics のチャットは DiscordLink と BlockLog に届き、Placeholders は Basics から残高を、Perms から prefix を読み、WorldTools の編集は BlockLog に記録されます。どのプラグインも、Login が通すまではプレイヤーに手を出しません。
+- **ゲームプレイ系のプラグイン。** Npcs、Furniture、Crates、Pets、Jobs、Quests、Market、Graves、Rewards、Skills、Clans、VeinMiner、Regions、ChatGuard、Cosmetics、Crops は、初回起動時に説明付きの設定またはサンプルを `plugins/data/<id>/` に書き出します。お金は Basics を使います。Pumpkin 0.2.2 の制限：プラグインが送る会話画面はクライアントに届かないため、NPC の会話はボタン付きのチャットです。イベントが射手ではなく矢を示すため、弓での討伐は Jobs、Quests、Skills に数えられません。VeinMiner が追加で壊したブロックはイベントを出さないため、Jobs、Skills、BlockLog には見えず、幸運も数えません。プラグインはアイテムを地面に落とせないため、VeinMiner、Crops、各種報酬の品は直接インベントリに入ります。この 16 個はテスト用ボットとコンソールテストに合格していますが、実際のゲームクライアントではまだ遊ばれていません。
+- **一緒に入れるとプラグイン同士が連携します。** Basics のチャットは DiscordLink と BlockLog に届き、先に ChatGuard が確認します。Placeholders は Basics から残高を、Perms から prefix を、Clans からタグを読み、WorldTools の編集は BlockLog に記録されます。Jobs、Quests、Skills は同じ行動を数え、NPC はクエストを提示でき、Furniture、Crates、Cosmetics、Crops、Pets は CustomItems のアイテムと Models のモデルを使い、Furniture と VeinMiner は Claims の土地を尊重します。どのプラグインも、Login が通すまではプレイヤーに手を出しません。
 
 ## ビルド
 
